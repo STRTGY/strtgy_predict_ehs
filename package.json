@@ -1,0 +1,39 @@
+{
+  "name": "strtgy-predict-electrolit-hermosillo",
+  "version": "1.0.0",
+  "description": "Análisis geoespacial y comercial para distribución B2B de Electrolit en Hermosillo, Sonora",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "clean": "rimraf src/.observablehq/cache dist",
+    "sync:data": "python ../../scripts/sync_data_to_observable.py",
+    "dev": "npm run sync:data && observable preview",
+    "build": "npm run sync:data && observable build",
+    "preview": "observable preview --no-open",
+    "deploy": "observable deploy",
+    "observable": "observable",
+    "prebuild": "npm run clean"
+  },
+  "dependencies": {
+    "@observablehq/framework": "^1.13.3"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.5"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "geospatial",
+    "gis",
+    "observable",
+    "electrolit",
+    "hermosillo",
+    "sonora",
+    "b2b",
+    "distribution",
+    "analytics"
+  ],
+  "author": "STRTGY",
+  "license": "UNLICENSED"
+}

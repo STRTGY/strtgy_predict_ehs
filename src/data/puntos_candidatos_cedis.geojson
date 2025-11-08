@@ -1,0 +1,192 @@
+{
+  "type": "FeatureCollection",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "EPSG:4326"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "rank": 1,
+        "nombre": "Hub Óptimo - Centro Comercial",
+        "latitude": 29.076858721068639,
+        "longitude": -110.96068589069584,
+        "score": 100.0,
+        "customers_5km": 98,
+        "customers_10km": 175,
+        "descripcion": "Ubicación con máxima cobertura: 98 clientes en 5km, 175 en 10km",
+        "prioridad": "maxima"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-110.96068589069584, 29.076858721068639]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "rank": 2,
+        "nombre": "Hub Alternativo - Zona Noroeste",
+        "latitude": 29.123308039849142,
+        "longitude": -111.02065751443972,
+        "score": 98.925421097082761,
+        "customers_5km": 70,
+        "customers_10km": 165,
+        "descripcion": "Segunda mejor ubicación: 70 clientes en 5km, 165 en 10km",
+        "prioridad": "muy_alta"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-111.02065751443972, 29.123308039849142]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "rank": 3,
+        "nombre": "Hub Alternativo - Zona Oeste",
+        "latitude": 29.082475749777927,
+        "longitude": -111.02287936675133,
+        "score": 97.732524156267957,
+        "customers_5km": 60,
+        "customers_10km": 173,
+        "descripcion": "Tercera opción: 60 clientes en 5km, 173 en 10km",
+        "prioridad": "alta"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-111.02287936675133, 29.082475749777927]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "rank": 4,
+        "nombre": "Hub Alternativo - Centro-Oeste",
+        "latitude": 29.097409507541681,
+        "longitude": -110.99819994608664,
+        "score": 97.153842968389043,
+        "customers_5km": 128,
+        "customers_10km": 173,
+        "descripcion": "Cuarta opción: 128 clientes en 5km, 173 en 10km",
+        "prioridad": "alta"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-110.99819994608664, 29.097409507541681]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "rank": 5,
+        "nombre": "Hub Alternativo - Oeste Extendido",
+        "latitude": 29.082191838632525,
+        "longitude": -111.028008523263,
+        "score": 97.027998275232036,
+        "customers_5km": 48,
+        "customers_10km": 171,
+        "descripcion": "Quinta opción: 48 clientes en 5km, 171 en 10km",
+        "prioridad": "alta"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-111.028008523263, 29.082191838632525]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "rank": 6,
+        "nombre": "Hub Secundario - Centro-Sur",
+        "latitude": 29.066435847993866,
+        "longitude": -110.98568746458912,
+        "score": 96.916557986344856,
+        "customers_5km": 81,
+        "customers_10km": 177,
+        "descripcion": "Sexta opción: 81 clientes en 5km, 177 en 10km",
+        "prioridad": "media_alta"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-110.98568746458912, 29.066435847993866]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "rank": 7,
+        "nombre": "Hub Secundario - Oeste Central",
+        "latitude": 29.07797017086612,
+        "longitude": -111.02255626320525,
+        "score": 96.900865224627282,
+        "customers_5km": 52,
+        "customers_10km": 173,
+        "descripcion": "Séptima opción: 52 clientes en 5km, 173 en 10km",
+        "prioridad": "media_alta"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-111.02255626320525, 29.07797017086612]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "rank": 8,
+        "nombre": "Hub Secundario - Centro",
+        "latitude": 29.084175829643559,
+        "longitude": -110.99210394279604,
+        "score": 96.828685312532997,
+        "customers_5km": 122,
+        "customers_10km": 174,
+        "descripcion": "Octava opción: 122 clientes en 5km, 174 en 10km",
+        "prioridad": "media_alta"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-110.99210394279604, 29.084175829643559]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "rank": 9,
+        "nombre": "Hub Secundario - Sur",
+        "latitude": 29.066153096793567,
+        "longitude": -110.99081605181384,
+        "score": 96.795503821566257,
+        "customers_5km": 81,
+        "customers_10km": 177,
+        "descripcion": "Novena opción: 81 clientes en 5km, 177 en 10km",
+        "prioridad": "media_alta"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-110.99081605181384, 29.066153096793567]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "rank": 10,
+        "nombre": "Hub Secundario - Oeste Sur",
+        "latitude": 29.077686267483976,
+        "longitude": -111.02768523701624,
+        "score": 96.63816270311608,
+        "customers_5km": 44,
+        "customers_10km": 173,
+        "descripcion": "Décima opción: 44 clientes en 5km, 173 en 10km",
+        "prioridad": "media"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-111.02768523701624, 29.077686267483976]
+      }
+    }
+  ]
+}
+

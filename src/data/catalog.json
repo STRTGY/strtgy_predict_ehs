@@ -1,0 +1,210 @@
+{
+  "generated": "2025-11-07T19:33:02.764818",
+  "datasets": {
+    "agebs_base": {
+      "title": "AGEBs - Geografía Base",
+      "description": "Áreas Geoestadísticas Básicas de Hermosillo",
+      "filename": "agebs_base.web.geojson",
+      "type": "geojson",
+      "geometry_type": "Polygon",
+      "original_rows": 673,
+      "original_cols": 31,
+      "final_rows": 673,
+      "final_cols": 5,
+      "size_kb": 343.7,
+      "columns": [
+        "CVEGEO",
+        "CVE_ENT",
+        "CVE_MUN",
+        "CVE_AGEB"
+      ]
+    },
+    "top400": {
+      "title": "Top 400 Establecimientos",
+      "description": "Establecimientos prioritarios para distribución de Electrolit",
+      "filename": "top400.web.geojson",
+      "type": "geojson",
+      "geometry_type": "Point",
+      "original_rows": 400,
+      "original_cols": 81,
+      "final_rows": 400,
+      "final_cols": 11,
+      "size_kb": 153.2,
+      "columns": [
+        "id",
+        "nom_estab",
+        "raz_social",
+        "segmento",
+        "per_ocu",
+        "score_volumen",
+        "score_margen",
+        "score_fit",
+        "latitud",
+        "longitud"
+      ]
+    },
+    "top400_csv": {
+      "title": "Top 400 Establecimientos (CSV)",
+      "description": "Versión tabular de establecimientos prioritarios",
+      "filename": "top400.web.csv",
+      "type": "csv",
+      "original_rows": 400,
+      "original_cols": 15,
+      "final_rows": 400,
+      "final_cols": 5,
+      "size_kb": 18.3,
+      "columns": [
+        "nom_estab",
+        "segmento",
+        "score_volumen",
+        "score_margen",
+        "score_fit"
+      ]
+    },
+    "scored_sample": {
+      "title": "Establecimientos Scored (Muestra)",
+      "description": "Muestra de 1000 establecimientos con scoring",
+      "filename": "scored.sample.web.geojson",
+      "type": "geojson",
+      "geometry_type": "Point",
+      "original_rows": 10912,
+      "original_cols": 81,
+      "final_rows": 1000,
+      "final_cols": 6,
+      "size_kb": 240.2,
+      "columns": [
+        "id",
+        "nom_estab",
+        "segmento",
+        "latitud",
+        "longitud"
+      ]
+    },
+    "grid_suitability": {
+      "title": "Grid de Idoneidad para Distribución",
+      "description": "Celdas evaluadas para ubicación de hub logístico (500m grid)",
+      "filename": "grid_suitability.web.geojson",
+      "type": "geojson",
+      "geometry_type": "Polygon",
+      "original_rows": 1170,
+      "original_cols": 18,
+      "final_rows": 1170,
+      "final_cols": 16,
+      "size_kb": 760.1,
+      "columns": [
+        "suitability_score",
+        "customers_5km",
+        "customers_10km",
+        "customers_15km",
+        "coverage_ratio",
+        "score_proximity",
+        "score_coverage",
+        "score_infrastructure",
+        "score_demographics",
+        "score_operational",
+        "center_lat",
+        "center_lon",
+        "row",
+        "col",
+        "in_city"
+      ]
+    },
+    "top10_hubs": {
+      "title": "Top 10 Ubicaciones para Hub Logístico",
+      "description": "Mejores ubicaciones para centro de distribución",
+      "filename": "top10_hubs.web.csv",
+      "type": "csv",
+      "original_rows": 10,
+      "original_cols": 6,
+      "final_rows": 10,
+      "final_cols": 0,
+      "size_kb": 0.0,
+      "columns": []
+    },
+    "agebs_dist": {
+      "title": "AGEBs con Score de Distribución",
+      "description": "AGEBs evaluados para potencial de distribución",
+      "filename": "agebs_dist.web.geojson",
+      "type": "geojson",
+      "geometry_type": "Polygon",
+      "original_rows": 673,
+      "original_cols": 6,
+      "final_rows": 673,
+      "final_cols": 1,
+      "size_kb": 290.4,
+      "columns": []
+    },
+    "zonas_oportunidad": {
+      "title": "Zonas de Oportunidad",
+      "description": "Áreas con alta demanda y baja competencia",
+      "filename": "zonas_oportunidad.web.geojson",
+      "type": "geojson",
+      "geometry_type": "Polygon",
+      "original_rows": 673,
+      "original_cols": 37,
+      "final_rows": 673,
+      "final_cols": 11,
+      "size_kb": 460.9,
+      "columns": [
+        "CVEGEO",
+        "pob_total",
+        "n_establecimientos",
+        "densidad_comercial",
+        "avg_score",
+        "n_high_score",
+        "n_competitors",
+        "opportunity_score",
+        "oportunidad_tipo",
+        "zona_tipo"
+      ]
+    },
+    "sweetspot_top10": {
+      "title": "Sweet Spots Top 10",
+      "description": "Las 10 mejores ubicaciones óptimas combinadas",
+      "filename": "sweetspot_top10.web.geojson",
+      "type": "geojson",
+      "geometry_type": "Point",
+      "original_rows": 10,
+      "original_cols": 13,
+      "final_rows": 10,
+      "final_cols": 3,
+      "size_kb": 2.0,
+      "columns": [
+        "score_compuesto",
+        "score_logistico"
+      ]
+    },
+    "top20_comercial": {
+      "title": "Top 20 Puntos de Venta Mayorista",
+      "description": "Mejores establecimientos para venta B2B",
+      "filename": "top20_comercial.web.csv",
+      "type": "csv",
+      "original_rows": 20,
+      "original_cols": 83,
+      "final_rows": 20,
+      "final_cols": 7,
+      "size_kb": 1.4,
+      "columns": [
+        "nom_estab",
+        "segmento",
+        "score_volumen",
+        "score_margen",
+        "score_fit",
+        "latitud",
+        "longitud"
+      ]
+    },
+    "top10_logistica": {
+      "title": "Top 10 Ubicaciones Logísticas",
+      "description": "Mejores ubicaciones por eficiencia logística",
+      "filename": "top10_logistica.web.csv",
+      "type": "csv",
+      "original_rows": 10,
+      "original_cols": 6,
+      "final_rows": 10,
+      "final_cols": 0,
+      "size_kb": 0.0,
+      "columns": []
+    }
+  }
+}
