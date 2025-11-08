@@ -1,8 +1,8 @@
-# Maintenance Guide - Enhanced Ubicación CEDIS Page
+# Maintenance Guide - STRTGY Predict Framework
 
 ## 🎯 Purpose
 
-This guide helps you maintain and extend the enhanced UI/UX of the Ubicación CEDIS page, ensuring consistency with STRTGY's brand and Observable Framework best practices.
+This guide helps you maintain and extend the STRTGY Predict framework, ensuring consistency with STRTGY's brand guidelines and Observable Framework best practices.
 
 ---
 

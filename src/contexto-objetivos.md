@@ -11,7 +11,7 @@ import {kpi, formatNumber} from "./components/ui.js";
 ```js
 display(sectionHeader({
   title: "Contexto y Objetivos del Proyecto",
-  subtitle: "Marco estratégico para la expansión B2B de Electrolit en Hermosillo y Sonora",
+  subtitle: "Marco estratégico para la expansión comercial B2B - Caso de Estudio Demostrativo",
   certainty: "high"
 }));
 ```
@@ -20,7 +20,7 @@ display(sectionHeader({
 display(decisionCallout({
   title: "¿Qué decidir en esta sección?",
   items: [
-    "Validar alineación entre los objetivos del proyecto y las prioridades estratégicas de Electrolit",
+    "Validar alineación entre los objetivos del proyecto y las prioridades estratégicas de negocio",
     "Confirmar los supuestos de negocio que sustentan el modelo de priorización",
     "Identificar restricciones operativas que puedan afectar la implementación de recomendaciones"
   ]
@@ -31,16 +31,18 @@ display(decisionCallout({
 
 ## 1.1. El Problema de Negocio
 
+> **Disclaimer:** Este es un caso de estudio demostrativo del framework STRTGY Predict. Los datos y contexto son para fines ilustrativos.
+
 ### Situación Actual
 
-Electrolit ha consolidado su posición como líder en bebidas hidratantes en México, con fuerte presencia en canal retail moderno (cadenas nacionales y regionales). Sin embargo, **el canal B2B tradicional representa una oportunidad significativa de crecimiento** en mercados secundarios y terciarios donde la distribución organizada es limitada.
+Una empresa de distribución B2B busca expandir su red comercial en un mercado urbano de tamaño medio. **El canal B2B tradicional representa una oportunidad significativa de crecimiento** en mercados secundarios y terciarios donde la distribución organizada es limitada.
 
-**Hermosillo** (población metropolitana: ~900,000 habitantes) y **Sonora** (población estatal: ~3 millones) presentan características atractivas:
+El **mercado objetivo** (población metropolitana: ~900,000 habitantes) presenta características atractivas:
 
-- **Clima:** Temperaturas extremas (35–45°C en verano) aumentan demanda de hidratación
-- **Perfil económico:** Economía industrial y agrícola con poder adquisitivo medio-alto
-- **Infraestructura:** Red carretera bien desarrollada facilita distribución regional
-- **Competencia:** Mercado de bebidas fragmentado con oportunidades de consolidación
+- **Perfil demográfico:** Densidad poblacional media con concentración urbana
+- **Perfil económico:** Economía diversificada con poder adquisitivo medio-alto
+- **Infraestructura:** Red de transporte bien desarrollada facilita distribución regional
+- **Competencia:** Mercado fragmentado con oportunidades de consolidación
 
 ### El Desafío Operativo
 
