@@ -27,18 +27,20 @@ const agebsConOportunidadAlta = zonasOportunidad.features.filter(f => f.properti
 
 ```js
 display(heroSTRTGY({
-  title: "STRTGY Predict | Distribución de Electrolit en Hermosillo, Sonora",
+  title: "STRTGY Predict | Framework de Análisis Geoespacial B2B",
   subtitle: "Transformando datos geoespaciales en decisiones comerciales con certeza",
-  context: "Análisis de inteligencia geoestadística para optimizar la expansión B2B de Electrolit en Hermosillo y Sonora. De la complejidad territorial a una estrategia ejecutable con ROI medible.",
+  context: "Análisis de inteligencia geoestadística para optimizar la expansión comercial B2B. De la complejidad territorial a una estrategia ejecutable con ROI medible. Este es un caso de estudio demostrativo.",
   showPillars: true
 }));
 ```
 
 ## Resumen Ejecutivo
 
-**El desafío:** Electrolit busca expandir su red de distribución B2B en Hermosillo y Sonora, pero la ciudad presenta más de 10,000 establecimientos potenciales sin criterios claros de priorización. ¿Dónde invertir recursos comerciales y logísticos para maximizar conversión y volumen?
+**El desafío:** Una empresa de distribución B2B busca expandir su red en un mercado urbano con más de 10,000 establecimientos potenciales sin criterios claros de priorización. ¿Dónde invertir recursos comerciales y logísticos para maximizar conversión y volumen?
 
-**Nuestra solución:** Hemos abstraído la complejidad del territorio en un modelo de scoring multi-criterio que integra demografía (SCINCE 2020), densidad comercial (DENUE) y variables socioeconómicas. El resultado: **certeza en la priorización** de los ${formatNumber(totalEstablecimientos)} establecimientos de mayor potencial y la identificación de ${totalSweet} ubicaciones óptimas para infraestructura logística.
+**La solución:** Este framework abstrae la complejidad del territorio en un modelo de scoring multi-criterio que integra demografía, densidad comercial y variables socioeconómicas. El resultado: **certeza en la priorización** de establecimientos de mayor potencial y la identificación de ubicaciones óptimas para infraestructura logística.
+
+> **Nota:** Este es un caso de estudio demostrativo del framework STRTGY Predict. Los datos y análisis mostrados son para fines ilustrativos.
 
 ```js
 display(

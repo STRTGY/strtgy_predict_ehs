@@ -1,6 +1,15 @@
-# STRTGY Predict | Distribución de Electrolit en Hermosillo, Sonora
+# STRTGY Predict | Framework de Análisis Geoespacial B2B
 
-Análisis geoespacial y comercial interactivo para optimizar la distribución B2B de Electrolit en Hermosillo y Sonora. Este proyecto utiliza [Observable Framework](https://observablehq.com/framework/) para crear reportes reproducibles con visualizaciones dinámicas, mapas interactivos y capacidades de exportación.
+Framework de análisis geoespacial y comercial interactivo para optimizar estrategias de distribución y expansión comercial B2B. Construido con [Observable Framework](https://observablehq.com/framework/) para crear reportes reproducibles con visualizaciones dinámicas, mapas interactivos y análisis de datos georreferenciados.
+
+## ✨ Características Principales
+
+- 📊 **Análisis de mercado:** Identificación y priorización de clientes potenciales
+- 🗺️ **Mapas interactivos:** Visualización de datos geoespaciales con Leaflet
+- 📈 **Scoring multicriterio:** Modelos personalizables de evaluación y priorización
+- 🎯 **Análisis de ubicación:** Evaluación de puntos óptimos para centros de distribución
+- 📦 **Análisis logístico:** Optimización de rutas y cobertura de mercado
+- 💼 **Dashboard interactivo:** Filtros dinámicos y exportación de datos
 
 ## 🚀 Inicio rápido
 
@@ -34,68 +43,56 @@ El sitio estará disponible en <http://localhost:3000>
 ## 📁 Estructura del proyecto
 
 ```
-reports/strtgy_predict_midmen_electrolit_hermosillo/
+strtgy_predict/
 ├── src/
 │   ├── components/
-│   │   └── ui.js                    # Componentes UI reutilizables (KPI, tabla, badge, etc.)
+│   │   ├── ui.js                    # Componentes UI reutilizables (KPI, tabla, badge)
+│   │   ├── brand.js                 # Componentes con identidad STRTGY
+│   │   └── maps.js                  # Componentes de mapas
 │   ├── data/
 │   │   ├── loaders.js               # Loaders de datos con validación
 │   │   ├── README.md                # Guía de datasets requeridos
-│   │   ├── hermosillo_ageb.geojson  # Polígonos AGEB (colocar aquí)
-│   │   ├── denue_hermosillo.geojson # Establecimientos DENUE (colocar aquí)
-│   │   ├── scores_ageb.csv          # Scoring por AGEB (colocar aquí)
-│   │   ├── priorizados.csv          # Lista priorizada (colocar aquí)
-│   │   ├── isocronas_5_10.geojson   # Isocronas 5/10 min (colocar aquí) ✨ NUEVO
-│   │   ├── cuadricula_500m.geojson  # Grid 500m (colocar aquí) ✨ NUEVO
-│   │   ├── competencia.geojson      # Competencia (colocar aquí) ✨ NUEVO
-│   │   └── zonas_interes.geojson    # Zonas de interés (colocar aquí) ✨ NUEVO
+│   │   └── [tus archivos de datos]  # GeoJSON, CSV, etc.
 │   ├── index.md                     # Página de inicio
-│   ├── contexto-objetivos.md        # Contexto del proyecto
+│   ├── contexto-objetivos.md        # Contexto del análisis
 │   ├── datos-metodologia.md         # Metodología y fuentes
-│   ├── exploracion-territorio.md    # Mapas base y exploración (mejorado)
-│   ├── ubicacion-cedis.md           # Evaluación ubicación CEDIS ✨ NUEVO
-│   ├── analisis-comercial.md        # Análisis comercial por SCIAN (mejorado)
-│   ├── scoring-priorizacion.md      # Modelo de scoring (mejorado)
+│   ├── exploracion-territorio.md    # Exploración geográfica
+│   ├── ubicacion-cedis.md           # Evaluación de ubicaciones
+│   ├── analisis-comercial.md        # Análisis de mercado
+│   ├── scoring-priorizacion.md      # Modelo de scoring
 │   ├── logistica-sonora.md          # Análisis logístico
-│   ├── dashboard.md                 # Dashboard interactivo (mejorado)
-│   ├── anexos.md                    # Anexos y diccionario
-│   └── custom-theme.css             # Estilos personalizados (mejorado)
+│   ├── dashboard.md                 # Dashboard interactivo
+│   └── custom-theme.css             # Estilos personalizados
 ├── observablehq.config.js           # Configuración del sitio
 ├── package.json
 └── README.md
 ```
 
-## 📊 Datos requeridos
+## 📊 Estructura de Datos
 
-Para que el sitio funcione completamente, coloca los siguientes archivos en `src/data/`:
+El framework espera archivos de datos en `src/data/`. Consulta `src/data/README.md` para especificaciones detalladas.
 
-### Archivos principales
+### Tipos de datos soportados
 
-| Archivo | Descripción | Formato |
-|---------|-------------|---------|
-| `hermosillo_ageb.geojson` | Polígonos de AGEBs urbanas de Hermosillo | GeoJSON FeatureCollection |
-| `denue_hermosillo.geojson` | Establecimientos DENUE georreferenciados | GeoJSON FeatureCollection |
-| `scores_ageb.csv` | Scoring calculado por AGEB | CSV con columnas: `ageb`, `score`, variables... |
-| `priorizados.csv` | Lista priorizada de establecimientos | CSV con columnas: `id`, `nombre`, `scian`, `score`, `direccion`, `ageb`... |
+| Tipo | Descripción | Formato |
+|------|-------------|---------|
+| **Geográficos** | Polígonos, puntos, líneas | GeoJSON FeatureCollection |
+| **Establecimientos** | Ubicaciones de negocios | GeoJSON o CSV con lat/lon |
+| **Scoring** | Métricas de evaluación | CSV con id y scores |
+| **Demográficos** | Datos poblacionales | CSV o GeoJSON con propiedades |
+| **Isocronas** | Áreas de cobertura temporal | GeoJSON con propiedad de tiempo |
+| **Grids** | Cuadrículas de análisis | GeoJSON con métricas por celda |
 
-### Archivos nuevos (análisis ampliado)
+### Configuración de datos
 
-| Archivo | Descripción | Formato |
-|---------|-------------|---------|
-| `isocronas_5_10.geojson` | Polígonos isocronas 5 y 10 min | GeoJSON con propiedad `minutos: 5\|10` |
-| `cuadricula_500m.geojson` | Grid 500m con métricas | GeoJSON con `dens_comercial`, `pob18`, `score_grid` |
-| `competencia.geojson` | Puntos competencia (Abarrey, Balgo) | GeoJSON con `nombre`, `segmento` |
-| `zonas_interes.geojson` | Zonas de abastos, corredores | GeoJSON con `nombre` |
+El sistema de data loaders en `src/data/loaders.js` proporciona:
 
-### Archivos opcionales
+- ✅ Validación automática de estructura
+- ✅ Manejo graceful de archivos faltantes
+- ✅ Normalización de propiedades
+- ✅ Mensajes de error descriptivos
 
-- `sonora_municipios.geojson` - Límites municipales de Sonora
-- `demografia_hermosillo.csv` - Datos demográficos agregados
-- `logistica_analisis.json` - Resultados de análisis logístico
-
-**Ver `src/data/README.md` para instrucciones detalladas de cada archivo.**
-
-**Nota**: Todos los loaders son "graceful" - si un archivo no está disponible, el sitio mostrará un mensaje informativo sin fallar.
+**Nota**: Todos los datos sensibles deben mantenerse en repositorios privados. Este repositorio público contiene solo el framework y datos de ejemplo anonimizados.
 
 ## 🛠️ Comandos disponibles
 
@@ -267,16 +264,31 @@ NODE_OPTIONS=--max-old-space-size=4096 npm run build
 
 ## 🤝 Contribuciones
 
-Este es un proyecto interno de STRTGY. Para cambios:
+Las contribuciones son bienvenidas. Para contribuir:
 
-1. Crear branch desde `main`
-2. Hacer cambios y probar localmente
-3. Crear Pull Request con descripción clara
+1. Fork el repositorio
+2. Crea un branch para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push al branch (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
 
 ## 📄 Licencia
 
-Uso interno - STRTGY © 2025
+Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para más detalles.
+
+## 🏢 Sobre STRTGY
+
+STRTGY es una consultora especializada en inteligencia artificial y análisis geoespacial para optimización de negocios. Este framework es parte de nuestro conjunto de herramientas open-source para análisis de mercado y logística.
+
+## ⚠️ Nota Importante
+
+Este es un **framework público** para análisis geoespacial. Los datos incluidos en este repositorio son ejemplos anonimizados para demostración. Para implementaciones con datos reales:
+
+1. **No incluyas datos confidenciales** en repositorios públicos
+2. Mantén datos sensibles en repositorios privados separados
+3. Usa variables de entorno para credenciales de APIs
+4. Consulta nuestra [Política de Datos](docs/data-policy.md) para mejores prácticas
 
 ---
 
-**Desarrollado por STRTGY para Electrolit** | Última actualización: Octubre 2025
+**Powered by STRTGY Geointelligence Framework** | Última actualización: Noviembre 2025

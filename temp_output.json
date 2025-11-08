@@ -1,8 +1,0 @@
-file:///D:/OneDrive/LongTermMemory/100_PROYECTOS/110_STRTGY/110_STRTGY/119_strtgy_geointelligence/strtgy_ai_geointelligence/reports/strtgy_predict_midmen_electrolit_hermosillo/src/data/grid_suitability.web.geojson.js:30
-  throw new Error(`Grid suitability missing properties: ${missingProps.join(', ')}`);
-        ^
-
-Error: Grid suitability missing properties: suitability_score, customers_5km, customers_10km, center_lat, center_lon
-    at file:///D:/OneDrive/LongTermMemory/100_PROYECTOS/110_STRTGY/110_STRTGY/119_strtgy_geointelligence/strtgy_ai_geointelligence/reports/strtgy_predict_midmen_electrolit_hermosillo/src/data/grid_suitability.web.geojson.js:30:9
-
-Node.js v22.16.0

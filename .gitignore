@@ -1,4 +1,36 @@
-.DS_Store
-/dist/
+# Node modules
 node_modules/
-yarn-error.log
+
+# Build output
+dist/
+.observablehq/cache/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.log
+*.tmp
+temp_output.json
+
+# Python cache (if any scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local development
+.cache/
+.temp/
