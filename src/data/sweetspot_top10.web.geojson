@@ -1,0 +1,17 @@
+{
+"type": "FeatureCollection",
+"name": "sweetspot_top10.web",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "score_compuesto": 65.2535868180682, "score_logistico": 100.0 }, "geometry": { "type": "Point", "coordinates": [ -110.960686, 29.076859 ] } },
+{ "type": "Feature", "properties": { "score_compuesto": 61.95072969154257, "score_logistico": 98.925421097082761 }, "geometry": { "type": "Point", "coordinates": [ -111.020658, 29.123308 ] } },
+{ "type": "Feature", "properties": { "score_compuesto": 61.269377390594869, "score_logistico": 97.153842968389043 }, "geometry": { "type": "Point", "coordinates": [ -110.9982, 29.09741 ] } },
+{ "type": "Feature", "properties": { "score_compuesto": 60.419677390520462, "score_logistico": 96.828685312532997 }, "geometry": { "type": "Point", "coordinates": [ -110.992104, 29.084176 ] } },
+{ "type": "Feature", "properties": { "score_compuesto": 60.001792738978672, "score_logistico": 96.916557986344856 }, "geometry": { "type": "Point", "coordinates": [ -110.985687, 29.066436 ] } },
+{ "type": "Feature", "properties": { "score_compuesto": 59.607121456197966, "score_logistico": 96.795503821566257 }, "geometry": { "type": "Point", "coordinates": [ -110.990816, 29.066153 ] } },
+{ "type": "Feature", "properties": { "score_compuesto": 59.485314721449519, "score_logistico": 97.732524156267957 }, "geometry": { "type": "Point", "coordinates": [ -111.022879, 29.082476 ] } },
+{ "type": "Feature", "properties": { "score_compuesto": 58.964064038375525, "score_logistico": 97.027998275232036 }, "geometry": { "type": "Point", "coordinates": [ -111.028009, 29.082192 ] } },
+{ "type": "Feature", "properties": { "score_compuesto": 58.797068187892926, "score_logistico": 96.900865224627282 }, "geometry": { "type": "Point", "coordinates": [ -111.022556, 29.07797 ] } },
+{ "type": "Feature", "properties": { "score_compuesto": 58.60899915870678, "score_logistico": 96.63816270311608 }, "geometry": { "type": "Point", "coordinates": [ -111.027685, 29.077686 ] } }
+]
+}

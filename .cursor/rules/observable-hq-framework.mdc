@@ -1,0 +1,105 @@
+---
+description: To analyze, modify and create files related to Observable HQ Framework.
+alwaysApply: false
+---
+# Reglas agnósticas — Observable Framework
+
+Guía concisa para crear y editar páginas en Observable Framework con compatibilidad, rendimiento y mantenibilidad, alineada con la documentación oficial.
+
+## Ámbito y estructura
+
+- Código fuente bajo `src/`.
+- Páginas en `src/pages/**.md` (routing basado en archivos).
+- Activos y datasets dentro de `src/` para que `FileAttachment(...)` los resuelva y el build los copie.
+
+## Páginas Markdown
+
+- Front matter (opcional): `title`, `toc`, `theme`, `style`, `head`, `header`, `footer`, `sidebar`.
+- Usa fences `js`, `ts`, `jsx`, `tsx`.
+- En `js`: display implícito si la última expresión no termina en `;`. Usa `display(...)` cuando necesites control.
+- En `ts`: no hay display implícito; usa `display(...)` o declara variables top‑level y muéstralas después.
+- `${...}` inline acepta JavaScript, no JSX.
+- `width` y `now` son reactivos; evita trabajo pesado en celdas que dependan de ellos.
+
+## Reactividad
+
+- Solo las páginas (`.md`) pueden declarar variables top‑level reactivas; los módulos no.
+- Usa nombres únicos; no dupliques definiciones top‑level.
+- Hay `await` implícito entre celdas; maneja errores en la celda que resuelve la promesa.
+- Usa `Generators.input`, `Generators.observe` y `Mutable` con moderación; evita bucles infinitos.
+
+## Inputs
+
+- Vistas inmediatas: `view(Inputs.*)` para mostrar y exponer el valor.
+- Inputs desacoplados: `const ui = Inputs.*(...); const value = Generators.input(ui);` e inserta `${ui}` donde corresponda.
+
+## Datos y archivos
+
+- `FileAttachment("ruta.ext")` debe recibir un string estático. No generes rutas dinámicas salvo en páginas parametrizadas.
+- CSV/TSV: usa parseo tipado `.csv({typed: true})`, `.tsv({typed: true})`.
+- Medios: referencia estática en Markdown o `file.image()`; si usas canvas, limpia con `invalidation`.
+
+## Imports
+
+- Prefiere `npm:` para auto‑hosting, por ejemplo: `import * as Plot from "npm:@observablehq/plot"`.
+- También funcionan bare specifiers si el paquete está instalado; no uses `require`.
+- Importa módulos locales con sufijo `.js` (la build transpila TS/JSX). Ej.: `import {Card} from "./components/Card.js"`.
+- Import dinámico y `import.meta.resolve` solo con literales estáticos.
+
+## Responsivo
+
+- Pasa `width` a gráficos o usa `resize((width[, height]) => ...)`.
+- Si necesitas `height` fijo, asegúrate de que el contenedor tenga alto definido.
+
+## Rutas y parámetros
+
+- `src/pages/foo/bar.md` → `/foo/bar`.
+- Rutas parametrizadas: `[param].md` y `dynamicPaths` en `observablehq.config.js` si se generan desde datos.
+- Dentro de páginas parametrizadas usa `observable.params.nombre`. `FileAttachment` puede excepcionar el parámetro de ruta.
+
+## Estilos y temas
+
+- Usa temas predefinidos (`theme: "dashboard"`, etc.).
+- Para estilos custom, añade CSS y en `style` importa `observablehq:default.css` antes de overrides.
+
+## Do / Don’t
+
+- Do
+  - `view(Inputs.select(...))` y consumir su valor reactivo en otras celdas.
+  - `Plot.plot({width})` o `resize(...)` para responsivo.
+  - `FileAttachment("data/foo.csv").csv({typed: true})`.
+  - En `jsx/tsx` usa siempre `display(<Componente ... />)`.
+- Don’t
+  - Construir rutas de `FileAttachment` dinámicamente (fuera de páginas parametrizadas).
+  - Usar JSX dentro de `${...}` inline.
+  - Reutilizar nombres top‑level o depender del orden textual de celdas.
+
+## Checklist por página
+
+1) Front matter correcto según necesidad.
+2) Sin JSX en `${...}`; JSX solo en fences `jsx/tsx` con `display(...)`.
+3) Datos con `FileAttachment(...)` estático bajo `src/`.
+4) Inputs declarados con `view(Inputs.*)` o patrón `Generators.input`.
+5) Gráficos/DOM responsivos con `width` o `resize`.
+6) Sin duplicados de variables top‑level; promesas con errores manejados localmente.
+7) Imports desde `npm:` o locales `.js`; evita `require`.
+8) Si la ruta es parametrizada, usa `[param].md`, `observable.params.*` y configura `dynamicPaths`.
+9) Revisa el preview: consola limpia; assets copiados a `_file` tras build.
+
+## Snippet mínimo
+
+```js
+import * as Plot from "npm:@observablehq/plot";
+const data = FileAttachment("data/series.csv").csv({typed: true});
+```
+
+${resize((width) => Plot.plot({
+  width,
+  y: {grid: true},
+  marks: [Plot.lineY(data, {x: "fecha", y: "valor"})]
+}))}
+
+## Notas de calidad
+
+- Código auto‑explicativo; comentarios solo para decisiones no obvias.
+- Evita trabajo costoso en celdas reactivas frecuentes (`now`, `width`).
