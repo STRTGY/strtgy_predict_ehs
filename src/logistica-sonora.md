@@ -5,10 +5,43 @@ toc: true
 
 ```js
 import {sectionHeader, decisionCallout, implicationsCallout, roiMetric} from "./components/brand.js";
-import {kpi, formatNumber} from "./components/ui.js";
+import {kpi, formatNumber, table} from "./components/ui.js";
 
-const top10hubs = await FileAttachment("data/top10_hubs.web.csv").csv({typed: true});
-const top10logistica = await FileAttachment("data/top10_logistica.web.csv").csv({typed: true});
+// Cobertura real desde top10_logistica (HERE isócronas 5/10 min); fallback a top10_cedis
+let top10hubs = [];
+try {
+  const logistica = await FileAttachment("data/top10_logistica.web.csv").csv({typed: true});
+  if (logistica && logistica.length > 0 && "coverage_10min" in logistica[0]) {
+    const totalTop400 = 400;
+    top10hubs = logistica.map(h => ({
+      ...h,
+      coverage_5min: h.coverage_5min != null ? Number(h.coverage_5min) : null,
+      coverage_10min: h.coverage_10min != null ? Number(h.coverage_10min) : null,
+      businesses_5min: h.businesses_5min != null ? Number(h.businesses_5min) : null,
+      businesses_10min: h.businesses_10min != null ? Number(h.businesses_10min) : null,
+      score_logistico: h.score_adjusted != null ? Number(h.score_adjusted) : h.score
+    }));
+  }
+} catch (_) {}
+if (top10hubs.length === 0) {
+  const top10cedis = await FileAttachment("data/top10_cedis.web.csv").csv({typed: true});
+  const hasCoverage = top10cedis?.[0] && ("coverage_10min" in top10cedis[0] || "customers_10km" in top10cedis[0]);
+  if (top10cedis && hasCoverage) {
+    const total = 400;
+    top10hubs = top10cedis.map(h => {
+      const cov10 = h.coverage_10min != null ? Number(h.coverage_10min) : (h.customers_10km / total * 100);
+      const cov5 = h.coverage_5min != null ? Number(h.coverage_5min) : (h.customers_5km / total * 100);
+      return { ...h, coverage_5min: cov5, coverage_10min: cov10, score_logistico: h.score };
+    });
+  } else {
+    top10hubs = (top10cedis || []).map(h => ({
+      ...h,
+      coverage_10min: null,
+      coverage_5min: null,
+      score_logistico: h.score
+    }));
+  }
+}
 ```
 
 ```js
@@ -40,27 +73,71 @@ display(decisionCallout({
 **Análisis de Cobertura:**
 
 ```js
-const hubOptimo = top10hubs[0];
+// Mejor hub por cobertura 10 min (datos HERE) o primer registro
+const withCov = top10hubs.filter(h => h.coverage_10min != null);
+const hubOptimo = withCov.length > 0
+  ? withCov.reduce((a, b) => (a.coverage_10min >= b.coverage_10min ? a : b))
+  : top10hubs[0];
+const cobertura10Real = hubOptimo?.coverage_10min != null ? Number(hubOptimo.coverage_10min) : null;
+const cobertura5Real = hubOptimo?.coverage_5min != null ? Number(hubOptimo.coverage_5min) : null;
+const negocios10 = hubOptimo?.businesses_10min != null ? Number(hubOptimo.businesses_10min) : null;
+const datosReales = cobertura10Real != null;
 
-display(html`
-  <div class="grid grid-cols-3" style="gap: 1.5rem;">
-    ${[
-      {label: "Cobertura 30 min", value: `${(hubOptimo.cobertura_30min * 100).toFixed(1)}%`, desc: "de Top 400 establecimientos"},
-      {label: "Tiempo Promedio", value: `${hubOptimo.tiempo_prom_min.toFixed(1)} min`, desc: "desde hub óptimo a clientes"},
-      {label: "Radio Efectivo", value: "~20 km", desc: "asumiendo 40 km/h promedio"}
-    ].map(m => `
-      <div style="background: linear-gradient(135deg, #e3f2fd 0%, white 100%); padding: 2rem; border-radius: 10px; text-align: center; border: 2px solid #1976d2;">
-        <div style="font-size: 2.5rem; font-weight: 700; color: #1565c0; margin-bottom: 0.5rem;">${m.value}</div>
-        <div style="font-weight: 600; margin-bottom: 0.25rem;">${m.label}</div>
-        <div style="font-size: 0.875rem; color: #666;">${m.desc}</div>
-      </div>
-    `).join('')}
-  </div>
-`);
+function createMetricCard(value, label, desc, isEstimated = false) {
+  const card = document.createElement("div");
+  card.style.cssText = "background: linear-gradient(135deg, #e3f2fd 0%, white 100%); padding: 2rem; border-radius: 10px; text-align: center; border: 2px solid #1976d2;";
+  const valueDiv = document.createElement("div");
+  valueDiv.style.cssText = "font-size: 2.5rem; font-weight: 700; color: #1565c0; margin-bottom: 0.5rem;";
+  valueDiv.textContent = value;
+  const labelDiv = document.createElement("div");
+  labelDiv.style.cssText = "font-weight: 600; margin-bottom: 0.25rem;";
+  labelDiv.textContent = label + (isEstimated ? " (estimado)" : "");
+  const descDiv = document.createElement("div");
+  descDiv.style.cssText = "font-size: 0.875rem; color: #666;";
+  descDiv.textContent = desc;
+  card.append(valueDiv, labelDiv, descDiv);
+  return card;
+}
+
+const metricsContainer = document.createElement("div");
+metricsContainer.className = "grid grid-cols-3";
+metricsContainer.style.gap = "1.5rem";
+
+const labelCobertura = datosReales ? "Cobertura 10 min (HERE API)" : "Cobertura 30 min";
+const valueCobertura = datosReales
+  ? `${cobertura10Real.toFixed(1)}%`
+  : "—";
+const descCobertura = datosReales
+  ? "de Top 400 en 10 min (isócronas)"
+  : "sin datos de isócronas; ver Mapas > Isócronas";
+metricsContainer.appendChild(createMetricCard(valueCobertura, labelCobertura, descCobertura, !datosReales));
+
+const tiempoLabel = datosReales ? "Negocios en 10 min" : "Tiempo prom.";
+const tiempoValue = datosReales && negocios10 != null ? formatNumber(negocios10) : (datosReales ? "—" : "~12 min (estimado)");
+const tiempoDesc = datosReales ? "establecimientos cubiertos desde hub óptimo" : "desde hub óptimo a clientes";
+metricsContainer.appendChild(createMetricCard(tiempoValue, tiempoLabel, tiempoDesc, !datosReales && tiempoValue.includes("estimado")));
+
+metricsContainer.appendChild(createMetricCard(
+  "~20 km",
+  "Radio Efectivo",
+  "estimado; 40 km/h promedio (no medido)",
+  true
+));
+
+display(metricsContainer);
+
+const conclusionHeading = document.createElement("p");
+conclusionHeading.innerHTML = "<strong>Conclusión:</strong>";
+conclusionHeading.style.marginTop = "1.5rem";
+conclusionHeading.style.marginBottom = "0.5rem";
+display(conclusionHeading);
+const conclusionText = datosReales
+  ? `Con **${cobertura10Real.toFixed(1)}% de cobertura en 10 min (HERE API)** desde el hub óptimo, **no se justifica la inversión en micro-hubs zonales** en Hermosillo en Fase 1.${negocios10 != null ? ` El hub con mayor cobertura alcanza ${negocios10} establecimientos del Top 400 en 10 min.` : ""}`
+  : "Con **cobertura estimada** desde un solo hub, **no se justifica la inversión en micro-hubs zonales** en Hermosillo en Fase 1. Los establecimientos fuera de cobertura son en su mayoría periféricos (deciles <6).";
+const conclusionEl = document.createElement("p");
+conclusionEl.innerHTML = conclusionText;
+display(conclusionEl);
 ```
-
-**Conclusión:**  
-Con **${(hubOptimo.cobertura_30min * 100).toFixed(0)}% de cobertura** desde un solo hub, **no se justifica la inversión en micro-hubs zonales** en Hermosillo. El 25% restante son establecimientos periféricos de menor prioridad (deciles <6).
 
 ---
 
@@ -95,42 +172,41 @@ const ciudadesSonora = [
   {ciudad: "San Luis Río Colorado", pob: 205000, dist_hmo: 300, potencial: "BAJA", estrategia: "Fase 2"}
 ];
 
-display(html`
-  <div class="card">
-    <h3>Priorización de Ciudades en Sonora</h3>
-    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-      <thead>
-        <tr style="background: #f5f5f5; text-align: left;">
-          <th style="padding: 10px; border: 1px solid #ddd;">Ciudad</th>
-          <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Población</th>
-          <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Distancia de HMO (km)</th>
-          <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Potencial</th>
-          <th style="padding: 10px; border: 1px solid #ddd;">Estrategia Logística</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${ciudadesSonora.map(c => `
-          <tr style="border: 1px solid #ddd; ${c.potencial === 'ALTA' ? 'background: #e8f5e9;' : ''}">
-            <td style="padding: 10px; font-weight: 600;">${c.ciudad}</td>
-            <td style="padding: 10px; text-align: center;">${formatNumber(c.pob)}</td>
-            <td style="padding: 10px; text-align: center;">${c.dist_hmo === 0 ? '—' : formatNumber(c.dist_hmo)}</td>
-            <td style="padding: 10px; text-align: center;">
-              <span style="padding: 4px 10px; border-radius: 12px; font-weight: 600; background: ${
-                c.potencial === 'ALTA' ? '#c8e6c9' : c.potencial === 'MEDIA' ? '#fff9c4' : '#ffccbc'
-              }; color: ${
-                c.potencial === 'ALTA' ? '#2e7d32' : c.potencial === 'MEDIA' ? '#f57f17' : '#d84315'
-              };">${c.potencial}</span>
-            </td>
-            <td style="padding: 10px; font-size: 0.85rem; color: #666;">${c.estrategia}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-    <p style="margin-top: 1rem; font-size: 0.85rem; color: #999; font-style: italic;">
-      *Potencial estimado por tamaño de población, perfil económico y competitividad del mercado local.
-    </p>
-  </div>
-`);
+// Helper para crear badge de potencial
+function createPotencialBadge(potencial) {
+  const colors = {
+    ALTA: {bg: "#c8e6c9", color: "#2e7d32"},
+    MEDIA: {bg: "#fff9c4", color: "#f57f17"},
+    BAJA: {bg: "#ffccbc", color: "#d84315"}
+  };
+  const style = colors[potencial] || colors.BAJA;
+  const badge = document.createElement("span");
+  badge.style.cssText = `padding: 4px 10px; border-radius: 12px; font-weight: 600; background: ${style.bg}; color: ${style.color};`;
+  badge.textContent = potencial;
+  return badge;
+}
+
+const cardCiudades = document.createElement("div");
+cardCiudades.className = "card";
+
+const h3 = document.createElement("h3");
+h3.textContent = "Priorización de Ciudades en Sonora";
+cardCiudades.appendChild(h3);
+
+cardCiudades.appendChild(table(ciudadesSonora, [
+  {key: "ciudad", label: "Ciudad"},
+  {key: "pob", label: "Población", format: v => formatNumber(v)},
+  {key: "dist_hmo", label: "Distancia HMO (km)", format: v => v === 0 ? "—" : formatNumber(v)},
+  {key: "potencial", label: "Potencial", format: v => createPotencialBadge(v)},
+  {key: "estrategia", label: "Estrategia Logística"}
+], {sortable: false}));
+
+const nota = document.createElement("p");
+nota.style.cssText = "margin-top: 1rem; font-size: 0.85rem; color: #999; font-style: italic;";
+nota.textContent = "*Potencial estimado por tamaño de población, perfil económico y competitividad del mercado local.";
+cardCiudades.appendChild(nota);
+
+display(cardCiudades);
 ```
 
 ---
@@ -193,93 +269,15 @@ CEDIS propio en Hermosillo + subcontratación de distribución regional a operad
 
 ---
 
-## 6.3. Análisis de Costos Logísticos
-
-### Estructura de Costos Estimada (Mensual, Hermosillo)
-
 ```js
-const costosLogistica = [
-  {concepto: "Renta de CEDIS (300 m²)", costo: 45000, tipo: "Fijo"},
-  {concepto: "Personal (2 choferes + 1 coordinador)", costo: 35000, tipo: "Fijo"},
-  {concepto: "Flota (2 vehículos, depreciación + seguro)", costo: 25000, tipo: "Fijo"},
-  {concepto: "Combustible (promedio 3,000 km/mes @ $24/L, rend. 8 km/L)", costo: 9000, tipo: "Variable"},
-  {concepto: "Mantenimiento de flota", costo: 8000, tipo: "Variable"},
-  {concepto: "Sistemas (GPS, CRM logístico)", costo: 5000, tipo: "Fijo"},
-  {concepto: "Contingencias (10%)", costo: 12700, tipo: "Variable"}
-];
-
-const costoFijoTotal = costosLogistica.filter(c => c.tipo === "Fijo").reduce((sum, c) => sum + c.costo, 0);
-const costoVariableTotal = costosLogistica.filter(c => c.tipo === "Variable").reduce((sum, c) => sum + c.costo, 0);
-const costoTotal = costoFijoTotal + costoVariableTotal;
-
-display(html`
-  <div class="card">
-    <h3>Estructura de Costos Logísticos (Hermosillo, Mensual)</h3>
-    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-bottom: 1rem;">
-      <thead>
-        <tr style="background: #f5f5f5; text-align: left;">
-          <th style="padding: 10px; border: 1px solid #ddd;">Concepto</th>
-          <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Costo (MXN/mes)</th>
-          <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Tipo</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${costosLogistica.map(c => `
-          <tr style="border: 1px solid #ddd;">
-            <td style="padding: 10px;">${c.concepto}</td>
-            <td style="padding: 10px; text-align: right; font-weight: 600;">$${formatNumber(c.costo)}</td>
-            <td style="padding: 10px; text-align: center;">
-              <span style="padding: 3px 8px; border-radius: 10px; font-size: 0.8rem; background: ${c.tipo === 'Fijo' ? '#e3f2fd' : '#fff3e0'}; color: ${c.tipo === 'Fijo' ? '#1565c0' : '#e65100'};">${c.tipo}</span>
-            </td>
-          </tr>
-        `).join('')}
-        <tr style="background: #1565c0; color: white; font-weight: 700;">
-          <td style="padding: 10px;">TOTAL MENSUAL</td>
-          <td style="padding: 10px; text-align: right; font-size: 1.1rem;">$${formatNumber(costoTotal)}</td>
-          <td style="padding: 10px; text-align: center;">—</td>
-        </tr>
-      </tbody>
-    </table>
-    <div class="grid grid-cols-3" style="gap: 1rem;">
-      <div style="background: #e3f2fd; padding: 1rem; border-radius: 6px; text-align: center;">
-        <div style="font-size: 1.5rem; font-weight: 700; color: #1565c0;">$${formatNumber(costoFijoTotal)}</div>
-        <div style="font-size: 0.9rem; color: #666;">Costos Fijos</div>
-      </div>
-      <div style="background: #fff3e0; padding: 1rem; border-radius: 6px; text-align: center;">
-        <div style="font-size: 1.5rem; font-weight: 700; color: #e65100;">$${formatNumber(costoVariableTotal)}</div>
-        <div style="font-size: 0.9rem; color: #666;">Costos Variables</div>
-      </div>
-      <div style="background: #e8f5e9; padding: 1rem; border-radius: 6px; text-align: center;">
-        <div style="font-size: 1.5rem; font-weight: 700; color: #2e7d32;">$${formatNumber(costoTotal * 12)}</div>
-        <div style="font-size: 0.9rem; color: #666;">Costo Anual</div>
-      </div>
-    </div>
-  </div>
-`);
-```
-
----
-
-### ROI Logístico
-
-**Punto de equilibrio:**  
-Con costo logístico de **$${formatNumber(costoTotal)}/mes**, se requiere:
-
-- **Venta mínima:** $${formatNumber(Math.round(costoTotal / 0.15))}/mes (asumiendo 15% de margen neto)
-- **# de clientes activos:** ~${Math.round(costoTotal / 0.15 / 4000)} clientes con ticket promedio de $4,000 y 1.5 pedidos/mes
-
-**Proyección (Año 1):**  
-Si se convierten **200 clientes** del Top 400 con los supuestos del modelo de scoring, la venta proyectada es $${formatNumber(Math.round(2400000))} MXN/mes, lo que **cubre 2.9x el costo logístico** y deja margen operativo saludable.
-
----
-
-```js
+const coberturaFrase = (typeof datosReales !== "undefined" && datosReales && typeof cobertura10Real === "number")
+  ? `Cobertura ${cobertura10Real.toFixed(1)}% en 10 min (HERE API) con un solo CEDIS`
+  : "Cobertura estimada con un solo CEDIS (ver métricas arriba)";
 display(implicationsCallout({
   title: "Decisiones Clave de Logística",
   items: [
-    "**Hub único en Hermosillo es suficiente para Fase 1:** Cobertura >75% con un solo CEDIS. Diferir micro-hubs hasta validar demanda regional.",
+    `**Hub único en Hermosillo es suficiente para Fase 1:** ${coberturaFrase}. Diferir micro-hubs hasta validar demanda regional.`,
     "**Modelo híbrido para expansión:** Usar 3PL para rutas esporádicas a Nogales/Navojoa mientras se valida volumen. Si demanda sostiene >$500K/mes en Cajeme, considerar micro-hub.",
-    "**Inversión inicial controlada:** CEDIS + 2 vehículos requiere ~$300K MXN (setup) + $140K/mes (operación). Payback en <8 meses si se alcanza 60% del potencial proyectado.",
     "**Flota propia vs. outsourcing:** Flota propia recomendada para Hermosillo (control + menor costo/km). 3PL para rutas regionales largas (>200 km) donde frecuencia es baja."
   ]
 }));

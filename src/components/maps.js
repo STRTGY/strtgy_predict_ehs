@@ -5,6 +5,9 @@
 
 import * as L from "npm:leaflet@1.9.4";
 
+// Exportar L para que las páginas puedan usarlo directamente
+export { L };
+
 /**
  * Crea un mapa base de Leaflet
  */
@@ -14,10 +17,14 @@ export function createBaseMap(container, options = {}) {
     zoom = 12,
     maxZoom = 18,
     minZoom = 10,
-    scrollWheelZoom = true
+    scrollWheelZoom = true,
+    preferCanvas = false // Forzar SVG renderer para mejor soporte de estilos
   } = options;
 
-  const map = L.map(container, { scrollWheelZoom }).setView(center, zoom);
+  const map = L.map(container, { 
+    scrollWheelZoom,
+    preferCanvas // false = usar SVG renderer
+  }).setView(center, zoom);
   
   // Tileset gratuito de OpenStreetMap
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -37,41 +44,57 @@ export function createBaseMap(container, options = {}) {
  */
 export function addGeoJsonLayer(map, data, options = {}) {
   const {
-    style = defaultPolygonStyle,
-    pointToLayer = defaultPointToLayer,
+    style,
+    pointToLayer,
     onEachFeature,
     filter,
     popupContent,
     tooltipContent
   } = options;
   
-  const layer = L.geoJSON(data, {
-    style,
-    pointToLayer,
-    onEachFeature: (feature, layer) => {
-      // Popup
-      if (popupContent) {
-        const content = typeof popupContent === 'function' 
-          ? popupContent(feature.properties, feature) 
-          : popupContent;
-        layer.bindPopup(content, { maxWidth: 300 });
-      }
-      
-      // Tooltip
-      if (tooltipContent) {
-        const content = typeof tooltipContent === 'function'
-          ? tooltipContent(feature.properties, feature)
-          : tooltipContent;
-        layer.bindTooltip(content, { sticky: true });
-      }
-      
-      // Custom handler
-      if (onEachFeature) {
-        onEachFeature(feature, layer);
-      }
-    },
+  // Configurar opciones de L.geoJSON
+  const geoJsonOptions = {
     filter
-  }).addTo(map);
+  };
+  
+  // Solo agregar style si se proporciona (para polígonos)
+  if (style) {
+    geoJsonOptions.style = style;
+  }
+  
+  // Solo agregar pointToLayer si se proporciona (para puntos)
+  if (pointToLayer) {
+    geoJsonOptions.pointToLayer = pointToLayer;
+  } else {
+    // Usar el default solo si no hay pointToLayer personalizado
+    geoJsonOptions.pointToLayer = defaultPointToLayer;
+  }
+  
+  // Agregar onEachFeature para popups y tooltips
+  geoJsonOptions.onEachFeature = (feature, layer) => {
+    // Popup
+    if (popupContent) {
+      const content = typeof popupContent === 'function' 
+        ? popupContent(feature.properties, feature) 
+        : popupContent;
+      layer.bindPopup(content, { maxWidth: 300 });
+    }
+    
+    // Tooltip
+    if (tooltipContent) {
+      const content = typeof tooltipContent === 'function'
+        ? tooltipContent(feature.properties, feature)
+        : tooltipContent;
+      layer.bindTooltip(content, { sticky: true });
+    }
+    
+    // Custom handler
+    if (onEachFeature) {
+      onEachFeature(feature, layer);
+    }
+  };
+  
+  const layer = L.geoJSON(data, geoJsonOptions).addTo(map);
   
   return layer;
 }
@@ -138,20 +161,24 @@ export function styleByCategory(categoryField = "categoria", colorMap = {}) {
 
 /**
  * Paleta de colores por score (0-100)
+ * Ajustado para distribución real de scores (típicamente 10-95)
  */
 export function getColorForScore(score, reverse = false) {
   if (reverse) {
-    if (score >= 80) return "#d32f2f";
-    if (score >= 60) return "#f57c00";
-    if (score >= 40) return "#fbc02d";
-    if (score >= 20) return "#689f38";
-    return "#388e3c";
+    if (score >= 90) return "#c62828";  // Muy Alto (rojo oscuro)
+    if (score >= 80) return "#d32f2f";  // Alto
+    if (score >= 70) return "#f57c00";  // Medio-Alto
+    if (score >= 60) return "#fbc02d";  // Medio
+    if (score >= 50) return "#689f38";  // Medio-Bajo
+    return "#388e3c";                    // Bajo (verde)
   } else {
-    if (score >= 80) return "#1b5e20";
-    if (score >= 60) return "#388e3c";
-    if (score >= 40) return "#fbc02d";
-    if (score >= 20) return "#f57c00";
-    return "#d32f2f";
+    // Score alto = mejor = verde oscuro
+    if (score >= 90) return "#1b5e20";  // 90-100: Verde muy oscuro (Crítico)
+    if (score >= 80) return "#2e7d32";  // 80-89: Verde oscuro (Muy Alto)
+    if (score >= 70) return "#388e3c";  // 70-79: Verde (Alto)
+    if (score >= 60) return "#7cb342";  // 60-69: Verde claro (Medio-Alto)
+    if (score >= 50) return "#fbc02d";  // 50-59: Amarillo (Medio)
+    return "#ff9800";                    // <50: Naranja (Bajo)
   }
 }
 
@@ -262,6 +289,29 @@ export function createLegend(map, items, {
   
   legend.addTo(map);
   return legend;
+}
+
+/**
+ * Crear un círculo en el mapa
+ */
+export function createCircle(latlng, options = {}) {
+  const {
+    radius = 1000, // metros
+    color = "#3388ff",
+    fillColor = "#3388ff",
+    fillOpacity = 0.2,
+    weight = 2,
+    opacity = 0.8
+  } = options;
+  
+  return L.circle(latlng, {
+    radius,
+    color,
+    fillColor,
+    fillOpacity,
+    weight,
+    opacity
+  });
 }
 
 /**

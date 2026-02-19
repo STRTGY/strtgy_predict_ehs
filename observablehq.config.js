@@ -49,6 +49,7 @@ export default {
       open: true,
       pages: [
         { name: "🚚 Hubs Logísticos", path: "/mapas/hubs" },
+        { name: "⏱️ Isócronas", path: "/mapas/isocronas" },
         { name: "💰 Puntos de Venta", path: "/mapas/puntos-venta" },
         { name: "⭐ Sweet Spots", path: "/mapas/sweet-spots" }
       ]

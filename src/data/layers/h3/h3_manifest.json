@@ -1,0 +1,518 @@
+{
+  "resolutions": [
+    8,
+    9,
+    10
+  ],
+  "columns": [
+    "nse_index",
+    "nse_tier",
+    "tasa_participacion_econ",
+    "tasa_desempleo",
+    "tasa_ocupacion",
+    "tasa_alfabetizacion",
+    "tasa_asistencia_primaria",
+    "tasa_asistencia_secundaria",
+    "pct_sin_escolaridad",
+    "pct_educacion_superior",
+    "tasa_ocupacion_vivienda",
+    "pct_servicios_completos",
+    "pct_sin_electricidad",
+    "pct_sin_agua",
+    "pct_sin_drenaje",
+    "pct_piso_tierra",
+    "pct_con_internet",
+    "pct_con_computadora",
+    "pct_sin_salud",
+    "pct_imss",
+    "pct_seguro_popular",
+    "pct_jefatura_femenina",
+    "pct_migrantes_internos",
+    "pct_migrantes_internacionales",
+    "pct_residencia_estable",
+    "pct_migracion_reciente",
+    "pct_retorno_usa",
+    "pct_con_discapacidad",
+    "pct_discapacidad_derechohabiente",
+    "pct_hablantes_indigena",
+    "pct_monolingue_indigena",
+    "pct_bilingue",
+    "pct_hogares_indigenas",
+    "pct_catolica",
+    "pct_protestante",
+    "pct_sin_religion",
+    "pct_solteros",
+    "pct_casados_unidos",
+    "pct_divorciados_viudos",
+    "tasa_nupcialidad_joven",
+    "score_network_centrality"
+  ],
+  "column_metadata": {
+    "nse_index": {
+      "name": "nse_index",
+      "label": "nse_index",
+      "var_type": "index",
+      "format_str": "",
+      "domain": [
+        0.0,
+        76.01168626399436
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "nse_tier": {
+      "name": "nse_tier",
+      "label": "nse_tier",
+      "var_type": "categorical",
+      "format_str": "",
+      "domain": null,
+      "aggregation": "mode"
+    },
+    "tasa_participacion_econ": {
+      "name": "tasa_participacion_econ",
+      "label": "tasa_participacion_econ",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "tasa_desempleo": {
+      "name": "tasa_desempleo",
+      "label": "tasa_desempleo",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "tasa_ocupacion": {
+      "name": "tasa_ocupacion",
+      "label": "tasa_ocupacion",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "tasa_alfabetizacion": {
+      "name": "tasa_alfabetizacion",
+      "label": "tasa_alfabetizacion",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "tasa_asistencia_primaria": {
+      "name": "tasa_asistencia_primaria",
+      "label": "tasa_asistencia_primaria",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "tasa_asistencia_secundaria": {
+      "name": "tasa_asistencia_secundaria",
+      "label": "tasa_asistencia_secundaria",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_sin_escolaridad": {
+      "name": "pct_sin_escolaridad",
+      "label": "pct_sin_escolaridad",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_educacion_superior": {
+      "name": "pct_educacion_superior",
+      "label": "pct_educacion_superior",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "tasa_ocupacion_vivienda": {
+      "name": "tasa_ocupacion_vivienda",
+      "label": "tasa_ocupacion_vivienda",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_servicios_completos": {
+      "name": "pct_servicios_completos",
+      "label": "pct_servicios_completos",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_sin_electricidad": {
+      "name": "pct_sin_electricidad",
+      "label": "pct_sin_electricidad",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_sin_agua": {
+      "name": "pct_sin_agua",
+      "label": "pct_sin_agua",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_sin_drenaje": {
+      "name": "pct_sin_drenaje",
+      "label": "pct_sin_drenaje",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_piso_tierra": {
+      "name": "pct_piso_tierra",
+      "label": "pct_piso_tierra",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_con_internet": {
+      "name": "pct_con_internet",
+      "label": "pct_con_internet",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_con_computadora": {
+      "name": "pct_con_computadora",
+      "label": "pct_con_computadora",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_sin_salud": {
+      "name": "pct_sin_salud",
+      "label": "pct_sin_salud",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_imss": {
+      "name": "pct_imss",
+      "label": "pct_imss",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_seguro_popular": {
+      "name": "pct_seguro_popular",
+      "label": "pct_seguro_popular",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_jefatura_femenina": {
+      "name": "pct_jefatura_femenina",
+      "label": "pct_jefatura_femenina",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_migrantes_internos": {
+      "name": "pct_migrantes_internos",
+      "label": "pct_migrantes_internos",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_migrantes_internacionales": {
+      "name": "pct_migrantes_internacionales",
+      "label": "pct_migrantes_internacionales",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        37.142857142857146
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_residencia_estable": {
+      "name": "pct_residencia_estable",
+      "label": "pct_residencia_estable",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_migracion_reciente": {
+      "name": "pct_migracion_reciente",
+      "label": "pct_migracion_reciente",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_retorno_usa": {
+      "name": "pct_retorno_usa",
+      "label": "pct_retorno_usa",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_con_discapacidad": {
+      "name": "pct_con_discapacidad",
+      "label": "pct_con_discapacidad",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        21.73913043478261
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_discapacidad_derechohabiente": {
+      "name": "pct_discapacidad_derechohabiente",
+      "label": "pct_discapacidad_derechohabiente",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_hablantes_indigena": {
+      "name": "pct_hablantes_indigena",
+      "label": "pct_hablantes_indigena",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_monolingue_indigena": {
+      "name": "pct_monolingue_indigena",
+      "label": "pct_monolingue_indigena",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_bilingue": {
+      "name": "pct_bilingue",
+      "label": "pct_bilingue",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_hogares_indigenas": {
+      "name": "pct_hogares_indigenas",
+      "label": "pct_hogares_indigenas",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_catolica": {
+      "name": "pct_catolica",
+      "label": "pct_catolica",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_protestante": {
+      "name": "pct_protestante",
+      "label": "pct_protestante",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        73.33333333333333
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_sin_religion": {
+      "name": "pct_sin_religion",
+      "label": "pct_sin_religion",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        68.29268292682927
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_solteros": {
+      "name": "pct_solteros",
+      "label": "pct_solteros",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_casados_unidos": {
+      "name": "pct_casados_unidos",
+      "label": "pct_casados_unidos",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "pct_divorciados_viudos": {
+      "name": "pct_divorciados_viudos",
+      "label": "pct_divorciados_viudos",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        0.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "tasa_nupcialidad_joven": {
+      "name": "tasa_nupcialidad_joven",
+      "label": "tasa_nupcialidad_joven",
+      "var_type": "rate",
+      "format_str": "",
+      "domain": [
+        -200.0,
+        100.0
+      ],
+      "aggregation": "weighted_mean"
+    },
+    "score_network_centrality": {
+      "name": "score_network_centrality",
+      "label": "score_network_centrality",
+      "var_type": "index",
+      "format_str": "",
+      "domain": [
+        0.0,
+        1.0
+      ],
+      "aggregation": "weighted_mean"
+    }
+  },
+  "resolution_labels": {
+    "8": "Urban/Neighborhood (~0.74 km²)",
+    "9": "Block/AGEB (~0.1 km²)",
+    "10": "Manzana/Building (~0.015 km²)"
+  },
+  "bbox": [
+    1514538.4883847465,
+    1883701.3280511796,
+    1645731.6883306846,
+    1939560.3619136852
+  ],
+  "total_cells": {
+    "10": 340555,
+    "9": 49027,
+    "8": 7146
+  },
+  "created_at": "2026-02-19T15:13:35.898450",
+  "source_level": "ageb"
+}

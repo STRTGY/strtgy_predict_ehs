@@ -8,7 +8,7 @@ theme: ["cotton", "wide"]
 import {heroSTRTGY, decisionCallout, implicationsCallout} from "./components/brand.js";
 import {kpi, formatNumber} from "./components/ui.js";
 
-// Cargar datasets principales
+// Cargar datasets principales (Step 05: data/processed/midmen -> src/data)
 const catalog = await FileAttachment("data/catalog.json").json();
 const top400 = await FileAttachment("data/top400.web.geojson").json();
 const agebs = await FileAttachment("data/agebs_base.web.geojson").json();
@@ -16,7 +16,7 @@ const zonasOportunidad = await FileAttachment("data/zonas_oportunidad.web.geojso
 const sweetspots = await FileAttachment("data/sweetspot_top10.web.geojson").json();
 const top10hubs = await FileAttachment("data/top10_hubs.web.csv").csv({typed: true});
 
-// Métricas clave derivadas de los datasets
+// KPIs derivados de datos del pipeline (no hardcodeados)
 const totalEstablecimientos = top400.features.length;
 const totalAgebs = agebs.features.length;
 const totalSweet = sweetspots.features.length;
@@ -29,7 +29,7 @@ const agebsConOportunidadAlta = zonasOportunidad.features.filter(f => f.properti
 display(heroSTRTGY({
   title: "STRTGY Predict | Framework de Análisis Geoespacial B2B",
   subtitle: "Transformando datos geoespaciales en decisiones comerciales con certeza",
-  context: "Análisis de inteligencia geoestadística para optimizar la expansión comercial B2B. De la complejidad territorial a una estrategia ejecutable con ROI medible. Este es un caso de estudio demostrativo.",
+  context: "Análisis de inteligencia geoestadística para optimizar la expansión comercial B2B de Electrolit en Hermosillo, Sonora. De la complejidad territorial a una estrategia ejecutable con ROI medible.",
   showPillars: true
 }));
 ```
@@ -40,7 +40,7 @@ display(heroSTRTGY({
 
 **La solución:** Este framework abstrae la complejidad del territorio en un modelo de scoring multi-criterio que integra demografía, densidad comercial y variables socioeconómicas. El resultado: **certeza en la priorización** de establecimientos de mayor potencial y la identificación de ubicaciones óptimas para infraestructura logística.
 
-> **Nota:** Este es un caso de estudio demostrativo del framework STRTGY Predict. Los datos y análisis mostrados son para fines ilustrativos.
+> **Fuentes de datos:** Este análisis integra datos oficiales de INEGI (DENUE 2024, SCINCE 2020) procesados mediante el framework STRTGY Predict.
 
 ```js
 display(
@@ -114,11 +114,16 @@ Filtros dinámicos, exportación de listas y visualizaciones personalizables. Tu
 
 ## Mapas Interactivos
 
-<div class="grid grid-cols-3">
+<div class="grid grid-cols-4">
   <a href="./mapas/hubs" class="card" style="text-decoration: none; color: inherit; display: block; transition: all 0.2s ease;">
     <div style="font-size: 2.5rem; text-align: center; margin-bottom: 0.5rem;">🚚</div>
     <h3 style="margin: 0 0 0.5rem 0; color: #0066cc; font-size: 1.1rem;">Hubs Logísticos</h3>
     <p style="margin: 0; color: #666; font-size: 0.875rem; line-height: 1.4;">Top 10 ubicaciones óptimas para CEDIS</p>
+  </a>
+  <a href="./mapas/isocronas" class="card" style="text-decoration: none; color: inherit; display: block; transition: all 0.2s ease;">
+    <div style="font-size: 2.5rem; text-align: center; margin-bottom: 0.5rem;">⏱️</div>
+    <h3 style="margin: 0 0 0.5rem 0; color: #0066cc; font-size: 1.1rem;">Isócronas</h3>
+    <p style="margin: 0; color: #666; font-size: 0.875rem; line-height: 1.4;">Análisis de cobertura temporal</p>
   </a>
   <a href="./mapas/puntos-venta" class="card" style="text-decoration: none; color: inherit; display: block; transition: all 0.2s ease;">
     <div style="font-size: 2.5rem; text-align: center; margin-bottom: 0.5rem;">💰</div>
@@ -277,5 +282,5 @@ Consulta la metodología completa en [Datos y Metodología](./datos-metodologia)
 ---
 
 <small style="color: #999; display: block; text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #eee;">
-  **STRTGY** — Transformando complejidad en certeza | Proyecto Electrolit Hermosillo | Octubre 2025
+  **STRTGY** — Transformando complejidad en certeza | Proyecto Electrolit Hermosillo | Febrero 2026
 </small>

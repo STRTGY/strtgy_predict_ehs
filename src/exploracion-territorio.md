@@ -9,10 +9,10 @@ import * as Plot from "npm:@observablehq/plot";
 
 ```js
 // Cargar datos directamente con FileAttachment
-const agebGeo = FileAttachment("./data/agebs_base.web.geojson").json();
-const zonasOportunidad = FileAttachment("./data/zonas_oportunidad.web.geojson").json();
-const denue = FileAttachment("./data/scored.sample.web.geojson").json();
-const top20Comercial = FileAttachment("./data/top20_comercial.web.csv").csv({typed: true});
+const agebGeo = await FileAttachment("./data/agebs_base.web.geojson").json();
+const zonasOportunidad = await FileAttachment("./data/zonas_oportunidad.web.geojson").json();
+const denue = await FileAttachment("./data/scored.sample.web.geojson").json();
+const top20Comercial = await FileAttachment("./data/top20_comercial.web.csv").csv({typed: true});
 ```
 
 ```js

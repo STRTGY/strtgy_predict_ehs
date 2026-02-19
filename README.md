@@ -17,6 +17,7 @@ Framework de análisis geoespacial y comercial interactivo para optimizar estrat
 
 - Node.js 18 o superior
 - npm o yarn
+- Python 3.10+ con el paquete `geointelligence` instalado (para regenerar datos)
 
 ### Instalación
 
@@ -39,6 +40,62 @@ npm run preview
 ```
 
 El sitio estará disponible en <http://localhost:3000>
+
+## Regenerar datos
+
+Los datos del reporte se generan con el **pipeline unificado** de Midmen Electrolit Hermosillo. La fuente unica de rutas y parametros es la configuracion del proyecto; la salida se escribe en `src/data/` con sufijo `.web` y CRS WGS84.
+
+### Configuracion
+
+- `configs/proyectos/midmen/electrolit_hermosillo.yaml` - Proyecto y entregables
+- `configs/proyectos/midmen/pipeline_config.yaml` - Rutas (processed_dir, report_data_dir) y CRS
+
+### Comando del pipeline unificado
+
+Desde la raiz del repositorio:
+
+```bash
+# Ejecutar todos los pasos (01, 02, 02b, 03, 04, 04b, 05)
+python scripts/midmen/run_pipeline.py --step all
+
+# Opcional: config explicita
+python scripts/midmen/run_pipeline.py --step all --config configs/proyectos/midmen/pipeline_config.yaml
+
+# Ejecutar un paso concreto
+python scripts/midmen/run_pipeline.py --step 01
+python scripts/midmen/run_pipeline.py --step 05   # Solo exportar a Observable
+```
+
+### Archivos generados en `src/data/`
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `establecimientos_scored.web.geojson` | Establecimientos con scores y propiedad `nombre` |
+| `agebs_base.web.geojson` | AGEBs base |
+| `agebs_scored.web.geojson` | AGEBs con scoring y centralidad |
+| `agebs_scince.web.geojson` | AGEBs con KPIs censales SCINCE |
+| `top10_hubs.web.csv` | Top 10 ubicaciones CEDIS |
+| `top10_logistica.web.csv` | Top 10 logistica / cobertura |
+| `hub_isochrones.web.geojson` | Isocronas de hubs |
+| `isocronas_5_10_15.web.geojson` | Isocronas 5/10/15 min |
+| `puntos_candidatos_cedis.web.geojson` | Puntos candidatos CEDIS |
+| `denue_prioritarios.web.geojson` | DENUE prioritarios |
+| `catalog.json` | Metadatos de datasets (columnas, size_kb) |
+| `metrics.json` | KPIs del analisis B2B |
+| `denue_hermosillo_metadata.json` | Conteos DENUE (alineados con metrics) |
+
+Otros archivos `.web.geojson` / `.web.csv` pueden generarse segun la salida del pipeline (grid_suitability, zonas_oportunidad, top400, etc.).
+
+### Troubleshooting
+
+**Config no encontrada**
+- Verificar: `configs/proyectos/midmen/pipeline_config.yaml` y `electrolit_hermosillo.yaml`.
+
+**Datos DENUE**
+- Los datos raw y procesados intermedios estan en `data/raw/midmen/` y `data/processed/midmen/`.
+
+**Isocronas / OSMnx**
+- Configurar `ORS_API_KEY` o `HERE_API_KEY` para isocronas; OSMnx requiere red vial para centralidad.
 
 ## 📁 Estructura del proyecto
 
@@ -92,7 +149,7 @@ El sistema de data loaders en `src/data/loaders.js` proporciona:
 - ✅ Normalización de propiedades
 - ✅ Mensajes de error descriptivos
 
-**Nota**: Todos los datos sensibles deben mantenerse en repositorios privados. Este repositorio público contiene solo el framework y datos de ejemplo anonimizados.
+**Nota**: Los datos de este proyecto provienen de fuentes oficiales públicas (INEGI DENUE 2024, SCINCE 2020). El procesamiento y scoring son propiedad intelectual de STRTGY.
 
 ## 🛠️ Comandos disponibles
 
@@ -280,15 +337,16 @@ Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) par
 
 STRTGY es una consultora especializada en inteligencia artificial y análisis geoespacial para optimización de negocios. Este framework es parte de nuestro conjunto de herramientas open-source para análisis de mercado y logística.
 
-## ⚠️ Nota Importante
+## 📊 Fuentes de Datos
 
-Este es un **framework público** para análisis geoespacial. Los datos incluidos en este repositorio son ejemplos anonimizados para demostración. Para implementaciones con datos reales:
+Este proyecto utiliza **datos oficiales de fuentes públicas** del gobierno mexicano:
 
-1. **No incluyas datos confidenciales** en repositorios públicos
-2. Mantén datos sensibles en repositorios privados separados
-3. Usa variables de entorno para credenciales de APIs
-4. Consulta nuestra [Política de Datos](docs/data-policy.md) para mejores prácticas
+- **DENUE 2024:** Directorio Estadístico Nacional de Unidades Económicas (INEGI)
+- **SCINCE 2020:** Sistema para la Consulta de Información Censal (INEGI)
+- **Marco Geoestadístico Nacional:** Polígonos de AGEBs y manzanas (INEGI)
+
+Los datos han sido procesados y enriquecidos mediante la metodología propietaria STRTGY Predict para generar scores de priorización y análisis de ubicación.
 
 ---
 
-**Powered by STRTGY Geointelligence Framework** | Última actualización: Noviembre 2025
+**Powered by STRTGY Geointelligence Framework** | Última actualización: Diciembre 2025

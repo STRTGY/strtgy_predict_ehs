@@ -14,6 +14,54 @@ npm run sync:data
 python scripts/sync_data_to_observable.py
 ```
 
+## Pipeline data incorporation
+
+El directorio `src/data/` es alimentado por el **pipeline Midmen** (Step 05 y, si está habilitado, Step 05b). Step 05 es la **única fuente de verdad** para los archivos de este directorio: lee únicamente desde `data/processed/midmen/` y escribe los artefactos optimizados para web (`.web.geojson`, `.web.csv`) más `catalog.json`, `metrics.json` y `denue_hermosillo_metadata.json`.
+
+### Archivos producidos por Step 05 (directos desde processed)
+
+| Archivo en `src/data/` | Origen en `data/processed/midmen/` |
+|------------------------|------------------------------------|
+| `agebs_base.web.geojson` | `agebs_base.geojson` |
+| `zonas_oportunidad.web.geojson` | `zonas_oportunidad.geojson` |
+| `denue_prioritarios.web.geojson` | `denue_prioritarios.geojson` |
+| `agebs_scince.web.geojson` | `agebs_scince_kpis.geojson` |
+| `establecimientos_scored.web.geojson` | `establecimientos_scored.geojson` |
+| `agebs_scored.web.geojson` | `agebs_scored.geojson` |
+| `puntos_candidatos_cedis.web.geojson` | `cedis_candidates.geojson` |
+| `hub_isochrones.web.geojson` | `cedis_isochrones.geojson` (sin business_count) |
+| `isocronas_5_10_15.web.geojson` | `isocronas_5_10_15.geojson` (con business_count, origin_id) |
+| `top10_hubs.web.csv` | `top10_hubs.csv` |
+| `top10_logistica.web.csv` | `top10_logistica.csv` |
+
+### Archivos derivados por Step 05
+
+| Archivo en `src/data/` | Lógica |
+|------------------------|--------|
+| `top400.web.geojson` | Top 400 establecimientos por `score_total` desde `establecimientos_scored.geojson`; WGS84, propiedad `nombre` añadida. |
+| `top400.web.csv` | Mismos 400 establecimientos en CSV (todas las columnas de atributo + lon, lat) para CRM/Excel. |
+| `sweetspot_top10.web.geojson` | Top 10 candidatos CEDIS desde `cedis_candidates.geojson` (por score); mismo contenido que sweet spots. |
+| `sweetspot_top10_v2.web.geojson` | Copia de `sweetspot_top10.web.geojson` para uso en dashboard. |
+| `top10_cedis.web.csv` | Fusión de `top10_hubs.csv` y `top10_logistica.csv` por `ranking`; tabla única para CEDIS. |
+| `scored.sample.web.geojson` | Muestra aleatoria (máx. 1000) de `establecimientos_scored.geojson`; fallback para mapas/loaders. |
+| `top20_comercial.web.csv` | Top 20 establecimientos por `score_total` desde `establecimientos_scored.geojson`; CSV con nombre y coordenadas. |
+| `denue_hermosillo_prioritarios.web.geojson` | Alias: copia de `denue_prioritarios.web.geojson` (mismo contenido; nombre esperado por analisis-comercial y loaders). |
+| `denue_hermosillo_categorias_scian.web.csv` | Copia optimizada de `denue_categorias_scian.csv` (Step 02); categorías SCIAN en establecimientos prioritarios. |
+
+### Step 05b (H3)
+
+Si `h3_output.enabled` está activo, Step 05b escribe capas H3 en `src/data/layers/h3/` (resoluciones 8, 9, 10) y Step 05 añade las entradas correspondientes a `catalog.json`.
+
+### Isócronas (grid y mapa)
+
+- Las páginas **Mapas > Isócronas** y **Mapas > Hubs** usan **`isocronas_5_10_15.web.geojson`** para el grid y el mapa (tiempos 5, 10, 15 min; propiedades `business_count`, `origin_id`). En la UI se aplica un único alias: **`hub_id = origin_id ?? cedis_id ?? hub_id`** (función `normalizeIsochronesWithHubId` en `loaders.js`), de modo que los filtros por hub usen siempre `hub_id`, que coincide con `top10_hubs.ranking` (1–10).
+- `hub_isochrones.web.geojson` proviene de `cedis_isochrones` (Step 03) y no incluye `business_count` ni `area_km2`; la grid y las métricas usan `isocronas_5_10_15` para mostrar datos reales.
+
+### Grid y fallbacks
+
+- **`grid_suitability.web.geojson`**: No lo genera el pipeline. Es opcional/legado. Cuando no existe, los loaders y páginas (analisis-comercial, ubicacion-cedis) usan **`agebs_scored.web.geojson`** como proxy de “grid” o zona puntuada.
+- Los loaders en `loaders.js` (p. ej. `loadGrid500m`) hacen fallback a `agebs_scored` cuando el grid no está presente.
+
 ## Archivos Disponibles
 
 Consulta `catalog.json` para información completa sobre cada dataset (estructura, tamaño, columnas).

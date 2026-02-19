@@ -11,7 +11,7 @@ import {kpi, formatNumber} from "./components/ui.js";
 ```js
 display(sectionHeader({
   title: "Contexto y Objetivos del Proyecto",
-  subtitle: "Marco estratégico para la expansión comercial B2B - Caso de Estudio Demostrativo",
+  subtitle: "Marco estratégico para la expansión comercial B2B de Electrolit en Hermosillo, Sonora",
   certainty: "high"
 }));
 ```
@@ -31,7 +31,7 @@ display(decisionCallout({
 
 ## 1.1. El Problema de Negocio
 
-> **Disclaimer:** Este es un caso de estudio demostrativo del framework STRTGY Predict. Los datos y contexto son para fines ilustrativos.
+> **Fuentes de datos:** Este análisis integra datos oficiales de INEGI (DENUE 2024, SCINCE 2020) con metodología propietaria STRTGY Predict.
 
 ### Situación Actual
 

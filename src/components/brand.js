@@ -100,6 +100,19 @@ export function heroSTRTGY({
 }
 
 /**
+ * Convierte markdown básico (**bold**) a HTML
+ */
+function parseBasicMarkdown(text) {
+  // Escapar HTML primero para seguridad, luego procesar **bold**
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  // Convertir **texto** a <strong>texto</strong>
+  return escaped.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+}
+
+/**
  * Decision callout - para destacar decisiones clave
  */
 export function decisionCallout({
@@ -126,7 +139,8 @@ export function decisionCallout({
   
   items.forEach(item => {
     const li = document.createElement("li");
-    li.textContent = item;
+    // Usar innerHTML para procesar markdown básico (**bold**)
+    li.innerHTML = parseBasicMarkdown(item);
     li.style.marginBottom = "0.5rem";
     ul.appendChild(li);
   });
@@ -162,7 +176,8 @@ export function implicationsCallout({
   
   items.forEach(item => {
     const li = document.createElement("li");
-    li.textContent = item;
+    // Usar innerHTML para procesar markdown básico (**bold**)
+    li.innerHTML = parseBasicMarkdown(item);
     li.style.marginBottom = "0.5rem";
     ul.appendChild(li);
   });

@@ -1,15 +1,16 @@
 # Evaluación Estratégica de Ubicación CEDIS
 
 ```js
-import {isDataAvailable, dataNotAvailableMessage} from "./data/loaders.js";
+import {isDataAvailable, dataNotAvailableMessage, createLoaders} from "./data/loaders.js";
 import {kpi, formatNumber, formatPercent, table, badge, grid, card} from "./components/ui.js";
 import {heroSTRTGY, decisionCallout, implicationsCallout, sectionHeader, certaintyBadge} from "./components/brand.js";
 import * as Inputs from "npm:@observablehq/inputs";
 
-// Load data directly using FileAttachment with data loaders
-const isocronas = await FileAttachment("./data/isocronas_5_10_15.geojson").json();
-const grid500m = await FileAttachment("./data/grid_suitability.web.geojson").json();
-const zonasInteres = await FileAttachment("./data/puntos_candidatos_cedis.geojson").json();
+// Load data: pipeline filenames (.web) and grid via loader (fallback to agebs_scored in loaders.js)
+const loaders = createLoaders({ FileAttachment });
+const isocronas = await FileAttachment("./data/isocronas_5_10_15.web.geojson").json();
+const grid500m = await loaders.loadGrid500m();
+const zonasInteres = await FileAttachment("./data/puntos_candidatos_cedis.web.geojson").json();
 const agebGeo = await FileAttachment("./data/agebs_base.web.geojson").json();
 const denue = await FileAttachment("./data/scored.sample.web.geojson").json();
 ```
@@ -431,41 +432,51 @@ if (isDataAvailable(isocronas)) {
 } else {
   display(html`<div class="warning" style="background: #fff3e0; border-left: 4px solid #ff9800; padding: 1.5rem; border-radius: 8px; margin: 2rem 0;">
     <p style="margin: 0 0 0.5rem 0;"><strong style="color: #e65100;">⚠️ Mapa no disponible</strong></p>
-    <p style="margin: 0; font-size: 0.9rem;">Coloca el archivo <code>isocronas_5_10_15.geojson</code> en <code>src/data/</code> para visualizar el análisis de ubicación.</p>
+    <p style="margin: 0; font-size: 0.9rem;">Coloca el archivo <code>isocronas_5_10_15.web.geojson</code> en <code>src/data/</code> para visualizar el análisis de ubicación.</p>
   </div>`);
 }
 ```
 
 ```js
 // Interactive layer toggles (separate cell for reactivity)
-const showIso5 = view(Inputs.toggle({label: "Mostrar isocrona 5 min", value: true}));
-const showIso10 = view(Inputs.toggle({label: "Mostrar isocrona 10 min", value: true}));
-const showIso15 = view(Inputs.toggle({label: "Mostrar isocrona 15 min", value: false}));
-const showDensidad = view(Inputs.toggle({label: "Mostrar densidad comercial", value: false}));
-const showEstablecimientos = view(Inputs.toggle({label: "Mostrar establecimientos", value: false}));
-const showTraffic = view(Inputs.toggle({label: "🚦 Mostrar tráfico en tiempo real", value: false}));
+const showIso5 = view(Inputs.toggle({label: "🎯 5 minutos", value: true}));
+const showIso10 = view(Inputs.toggle({label: "⏱️ 10 minutos", value: true}));
+const showIso15 = view(Inputs.toggle({label: "⏰ 15 minutos", value: false}));
+const showDensidad = view(Inputs.toggle({label: "📊 Densidad comercial", value: false}));
+const showEstablecimientos = view(Inputs.toggle({label: "🏪 Establecimientos", value: false}));
+const showTraffic = view(Inputs.toggle({label: "🚦 Tráfico en vivo", value: false}));
 ```
 
-<div style="background: var(--theme-background-alt); padding: 1rem; border-radius: 8px; margin: 1rem 0; display: flex; gap: 2rem; flex-wrap: wrap; border: 1px solid var(--theme-foreground-faintest);">
-  <div style="display: flex; align-items: center; gap: 0.5rem;">
-    ${showIso5}
+<!-- Sección de capas del mapa oculta
+<div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 1.75rem; border-radius: 12px; margin: 1.5rem 0; border: 2px solid var(--strtgy-blue); box-shadow: 0 4px 12px rgba(0, 102, 204, 0.1);">
+  <h4 style="margin: 0 0 1.25rem 0; color: var(--strtgy-blue); font-size: 1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+    🗂️ Capas del Mapa
+  </h4>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+    <div style="background: white; padding: 0.875rem 1rem; border-radius: 8px; border-left: 4px solid #00a651; box-shadow: 0 2px 6px rgba(0,0,0,0.08); transition: transform 0.2s;">
+      ${showIso5}
+    </div>
+    <div style="background: white; padding: 0.875rem 1rem; border-radius: 8px; border-left: 4px solid #ff6b35; box-shadow: 0 2px 6px rgba(0,0,0,0.08); transition: transform 0.2s;">
+      ${showIso10}
+    </div>
+    <div style="background: white; padding: 0.875rem 1rem; border-radius: 8px; border-left: 4px solid #9b59b6; box-shadow: 0 2px 6px rgba(0,0,0,0.08); transition: transform 0.2s;">
+      ${showIso15}
+    </div>
+    <div style="background: white; padding: 0.875rem 1rem; border-radius: 8px; border-left: 4px solid var(--strtgy-orange); box-shadow: 0 2px 6px rgba(0,0,0,0.08); transition: transform 0.2s;">
+      ${showDensidad}
+    </div>
+    <div style="background: white; padding: 0.875rem 1rem; border-radius: 8px; border-left: 4px solid var(--strtgy-blue); box-shadow: 0 2px 6px rgba(0,0,0,0.08); transition: transform 0.2s;">
+      ${showEstablecimientos}
+    </div>
+    <div style="background: white; padding: 0.875rem 1rem; border-radius: 8px; border-left: 4px solid #e74c3c; box-shadow: 0 2px 6px rgba(0,0,0,0.08); transition: transform 0.2s;">
+      ${showTraffic}
+    </div>
   </div>
-  <div style="display: flex; align-items: center; gap: 0.5rem;">
-    ${showIso10}
-  </div>
-  <div style="display: flex; align-items: center; gap: 0.5rem;">
-    ${showIso15}
-  </div>
-  <div style="display: flex; align-items: center; gap: 0.5rem;">
-    ${showDensidad}
-  </div>
-  <div style="display: flex; align-items: center; gap: 0.5rem;">
-    ${showEstablecimientos}
-  </div>
-  <div style="display: flex; align-items: center; gap: 0.5rem;">
-    ${showTraffic}
-  </div>
+  <p style="margin: 1rem 0 0 0; font-size: 0.8rem; color: #6c757d; text-align: center; font-style: italic;">
+    💡 Activa o desactiva las capas para personalizar la visualización del análisis
+  </p>
 </div>
+-->
 
 ```js
 // Reactive cell to update layers visibility (without recreating map)
@@ -560,51 +571,6 @@ if (isDataAvailable(zonasInteres)) {
     };
   }).sort((a, b) => b.score_total - a.score_total);
   
-  // Interactive scenario selector
-  const escenarioSeleccionado = view(
-    Inputs.select(
-      escenarios.map(e => e.escenario),
-      {
-        label: "Seleccionar escenario para detalle:",
-        value: escenarios[0].escenario
-      }
-    )
-  );
-  
-  const detalle = escenarios.find(e => e.escenario === escenarioSeleccionado);
-  
-  // Display scenario detail card
-  if (detalle) {
-    display(html`
-      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem; border-radius: 12px; margin: 1.5rem 0; box-shadow: 0 6px 24px rgba(102,126,234,0.3);">
-        <h3 style="margin: 0 0 1rem 0; font-size: 1.5rem;">📍 ${detalle.escenario}</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-top: 1.5rem;">
-          <div style="background: rgba(255,255,255,0.15); padding: 1rem; border-radius: 8px; text-align: center;">
-            <div style="font-size: 2rem; font-weight: 700;">${detalle.score_total}</div>
-            <div style="font-size: 0.875rem; opacity: 0.9; margin-top: 0.25rem;">Score Total</div>
-          </div>
-          <div style="background: rgba(255,255,255,0.15); padding: 1rem; border-radius: 8px; text-align: center;">
-            <div style="font-size: 2rem; font-weight: 700;">${detalle.accesibilidad}</div>
-            <div style="font-size: 0.875rem; opacity: 0.9; margin-top: 0.25rem;">Accesibilidad</div>
-          </div>
-          <div style="background: rgba(255,255,255,0.15); padding: 1rem; border-radius: 8px; text-align: center;">
-            <div style="font-size: 2rem; font-weight: 700;">${detalle.densidad_comercial}</div>
-            <div style="font-size: 0.875rem; opacity: 0.9; margin-top: 0.25rem;">Densidad</div>
-          </div>
-          <div style="background: rgba(255,255,255,0.15); padding: 1rem; border-radius: 8px; text-align: center;">
-            <div style="font-size: 2rem; font-weight: 700;">${detalle.acceso_trailers}</div>
-            <div style="font-size: 0.875rem; opacity: 0.9; margin-top: 0.25rem;">Logística</div>
-          </div>
-        </div>
-        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.3); text-align: center;">
-          <span style="background: ${detalle.prioridad === '1' ? '#00a651' : '#ff9800'}; padding: 0.5rem 1.5rem; border-radius: 20px; font-weight: 600; font-size: 1rem;">
-            ${detalle.recomendacion}
-          </span>
-        </div>
-      </div>
-    `);
-  }
-  
   // Comparison table
   display(html`<h4 style="margin: 2rem 0 1rem 0; font-size: 1.1rem; color: var(--strtgy-blue);">📊 Tabla Comparativa Completa</h4>`);
   
@@ -678,9 +644,11 @@ if (isDataAvailable(zonasInteres)) {
 ## Análisis de densidad comercial por cuadrícula
 
 ```js
+import * as Plot from "npm:@observablehq/plot";
+```
+
+```js
 if (isDataAvailable(grid500m)) {
-  import * as Plot from "npm:@observablehq/plot";
-  
   const gridData = grid500m.features.map(f => ({
     score: f.properties.suitability_score || 0,
     customers_5km: f.properties.customers_5km || 0,
@@ -743,8 +711,9 @@ display(implicationsCallout({
 }));
 ```
 
-<div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 2.5rem; border-radius: 12px; margin: 2rem 0; box-shadow: 0 6px 24px rgba(0,0,0,0.2);">
-  <h3 style="margin: 0 0 1.5rem 0; font-size: 1.5rem; border-bottom: 2px solid var(--strtgy-blue); padding-bottom: 1rem;">🎯 Recomendación Ejecutiva</h3>
+```js
+display(html`<div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 2.5rem; border-radius: 12px; margin: 2rem 0; box-shadow: 0 6px 24px rgba(0,0,0,0.2);">
+  <h3 style="margin: 0 0 1.5rem 0; font-size: 1.5rem; border-bottom: 2px solid var(--strtgy-blue); padding-bottom: 1rem; color: white;">🎯 Recomendación Ejecutiva</h3>
   
   <div style="display: grid; gap: 1.5rem; margin-top: 1.5rem;">
     <div style="background: rgba(0, 166, 81, 0.15); border-left: 4px solid #00a651; padding: 1.25rem; border-radius: 8px;">
@@ -769,11 +738,13 @@ display(implicationsCallout({
       </p>
     </div>
   </div>
-</div>
+</div>`);
+```
 
 ---
 
-<div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 2rem; border-radius: 12px; margin: 3rem 0 2rem 0; text-align: center;">
+```js
+display(html`<div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 2rem; border-radius: 12px; margin: 3rem 0 2rem 0; text-align: center;">
   <div style="margin-bottom: 1rem;">
     <span style="font-size: 2rem; font-weight: 700; background: linear-gradient(90deg, #4da6ff, #00d66c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">STRTGY</span>
   </div>
@@ -785,4 +756,5 @@ display(implicationsCallout({
     Análisis basado en isocronas calculadas, DENUE y métricas de densidad espacial.<br>
     Se recomienda actualizar con validación de campo antes de la decisión final.
   </div>
-</div>
+</div>`);
+```

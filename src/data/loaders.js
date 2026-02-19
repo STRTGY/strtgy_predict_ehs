@@ -2,9 +2,32 @@
  * Data loaders with graceful fallbacks and validation for Observable Framework pages.
  * Pass the FileAttachment function from the page:
  *   const loaders = createLoaders({ FileAttachment });
- * 
+ *
  * All loaders return null if data is not available (graceful degradation).
  */
+
+/**
+ * Normalize isochrone features to a single hub identifier for filters and UI.
+ * Pipeline may export origin_id (isocronas_5_10_15), cedis_id (cedis_isochrones), or hub_id.
+ * This alias ensures mapas/isocronas and mapas/hubs use hub_id consistently; hub_id
+ * matches top10_hubs.ranking (1-based).
+ * @param {Object} featureCollection - GeoJSON FeatureCollection (e.g. isocronas_5_10_15)
+ * @returns {Object} Same collection with each feature.properties.hub_id set
+ */
+export function normalizeIsochronesWithHubId(featureCollection) {
+  const features = featureCollection?.features ?? [];
+  return {
+    type: "FeatureCollection",
+    features: features.map((f) => ({
+      ...f,
+      properties: {
+        ...f.properties,
+        hub_id: f.properties?.origin_id ?? f.properties?.cedis_id ?? f.properties?.hub_id
+      }
+    }))
+  };
+}
+
 export function createLoaders({ FileAttachment }) {
   /**
    * Generic loader with error handling
@@ -49,11 +72,19 @@ export function createLoaders({ FileAttachment }) {
 
     /**
      * Load integrated DENUE for Hermosillo
-     * Uses scored sample or top400 establishments
+     * Uses official DENUE data with SCIAN classification
      * @returns {Promise<Object|null>} GeoJSON FeatureCollection
      */
     async loadDenue() {
-      // Try scored sample first (1000 establishments)
+      // Try official DENUE data first (full dataset)
+      const denueOfficial = await tryLoad(
+        "data/denue_hermosillo.web.geojson",
+        (f) => f.json(),
+        (data) => data?.type === "FeatureCollection"
+      );
+      if (denueOfficial) return denueOfficial;
+      
+      // Try scored sample (1000 establishments)
       const scored = await tryLoad(
         "data/scored.sample.web.geojson", 
         (f) => f.json(),
@@ -92,6 +123,41 @@ export function createLoaders({ FileAttachment }) {
           } : null
         })).filter(f => f.geometry !== null)
       };
+    },
+
+    /**
+     * Load priority establishments from DENUE (retail/wholesale for Electrolit)
+     * @returns {Promise<Object|null>} GeoJSON FeatureCollection
+     */
+    async loadDenuePrioritarios() {
+      return tryLoad(
+        "data/denue_hermosillo_prioritarios.web.geojson",
+        (f) => f.json(),
+        (data) => data?.type === "FeatureCollection" && Array.isArray(data.features)
+      );
+    },
+
+    /**
+     * Load SCIAN category aggregation (rama level - 4 digits)
+     * @returns {Promise<Array<Object>|null>}
+     */
+    async loadScianCategories() {
+      return tryLoad(
+        "data/denue_hermosillo_categorias_scian.web.csv",
+        (f) => f.csv({typed: true}),
+        (data) => Array.isArray(data) && data.length > 0
+      );
+    },
+
+    /**
+     * Load DENUE metadata
+     * @returns {Promise<Object|null>}
+     */
+    async loadDenueMetadata() {
+      return tryLoad(
+        "data/denue_hermosillo_metadata.json",
+        (f) => f.json()
+      );
     },
 
     /**
@@ -237,11 +303,16 @@ export function createLoaders({ FileAttachment }) {
 
     /**
      * Load isochrones (5, 10 and 15 min) GeoJSON
-     * Converts range (seconds) to minutos property for consistency
+     * Prefers pipeline output isocronas_5_10_15.web.geojson (Step 05).
+     * Converts range (seconds) to minutos property for consistency.
      * @returns {Promise<Object|null>} GeoJSON FeatureCollection
      */
     async loadIsocronas() {
       const data = await tryLoad(
+        "data/isocronas_5_10_15.web.geojson",
+        (f) => f.json(),
+        (data) => data?.type === "FeatureCollection"
+      ) || await tryLoad(
         "data/isocronas_5_10_15.geojson",
         (f) => f.json(),
         (data) => data?.type === "FeatureCollection"
@@ -264,12 +335,13 @@ export function createLoaders({ FileAttachment }) {
     },
 
     /**
-     * Load 500m grid GeoJSON with metrics
-     * Falls back to grid_suitability if cuadricula_500m not available
+     * Load 500m grid GeoJSON with metrics.
+     * Fallback order: cuadricula_500m (legacy) -> grid_suitability.web.geojson (legacy) ->
+     * agebs_scored.web.geojson (pipeline). Pipeline does not produce a grid; agebs_scored
+     * is used as proxy when grid files are not present.
      * @returns {Promise<Object|null>} GeoJSON FeatureCollection
      */
     async loadGrid500m() {
-      // Try direct file first
       const direct = await tryLoad(
         "data/cuadricula_500m.geojson",
         (f) => f.json(),
@@ -277,25 +349,43 @@ export function createLoaders({ FileAttachment }) {
       );
       if (direct) return direct;
       
-      // Fallback to grid_suitability with property mapping
       const gridSuit = await tryLoad(
         "data/grid_suitability.web.geojson",
         (f) => f.json(),
         (data) => data?.type === "FeatureCollection"
       );
+      if (gridSuit) {
+        return {
+          ...gridSuit,
+          features: gridSuit.features.map(f => ({
+            ...f,
+            properties: {
+              ...f.properties,
+              score_grid: f.properties.suitability_score || f.properties.score_grid || 0,
+              dens_comercial: f.properties.density_commercial || f.properties.dens_comercial || 0,
+              pob18: f.properties.pob_18plus || f.properties.pob18 || 0
+            }
+          }))
+        };
+      }
       
-      if (!gridSuit) return null;
+      // Pipeline fallback: use agebs_scored (no grid produced by Step 05)
+      const agebsScored = await tryLoad(
+        "data/agebs_scored.web.geojson",
+        (f) => f.json(),
+        (data) => data?.type === "FeatureCollection"
+      );
+      if (!agebsScored) return null;
       
-      // Map properties for compatibility
       return {
-        ...gridSuit,
-        features: gridSuit.features.map(f => ({
+        ...agebsScored,
+        features: agebsScored.features.map(f => ({
           ...f,
           properties: {
             ...f.properties,
-            score_grid: f.properties.suitability_score || f.properties.score_grid || 0,
-            dens_comercial: f.properties.density_commercial || f.properties.dens_comercial || 0,
-            pob18: f.properties.pob_18plus || f.properties.pob18 || 0
+            score_grid: f.properties.score_total ?? f.properties.score ?? f.properties.score_grid ?? 0,
+            dens_comercial: f.properties.dens_comercial ?? f.properties.density_commercial ?? 0,
+            pob18: f.properties.pob18 ?? f.properties.pob_18plus ?? 0
           }
         }))
       };
@@ -344,11 +434,11 @@ export function createLoaders({ FileAttachment }) {
 
     /**
      * Load zonas de interés (abastos, corredores) GeoJSON
-     * Uses puntos_candidatos_cedis or zonas_oportunidad as proxy
+     * Prefers pipeline .web output puntos_candidatos_cedis.web.geojson (Step 05).
+     * Falls back to zonas_interes, then puntos_candidatos_cedis.geojson, then zonas_oportunidad.
      * @returns {Promise<Object|null>} GeoJSON FeatureCollection
      */
     async loadZonasInteres() {
-      // Direct file
       const direct = await tryLoad(
         "data/zonas_interes.geojson",
         (f) => f.json(),
@@ -356,8 +446,12 @@ export function createLoaders({ FileAttachment }) {
       );
       if (direct) return direct;
       
-      // Try puntos_candidatos_cedis (create buffers as zones)
+      // Prefer pipeline .web output, then legacy filename
       const puntos = await tryLoad(
+        "data/puntos_candidatos_cedis.web.geojson",
+        (f) => f.json(),
+        (data) => data?.type === "FeatureCollection"
+      ) || await tryLoad(
         "data/puntos_candidatos_cedis.geojson",
         (f) => f.json(),
         (data) => data?.type === "FeatureCollection"

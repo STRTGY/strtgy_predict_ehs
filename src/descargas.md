@@ -26,8 +26,8 @@ display(sectionHeader({
       Lista priorizada con scoring, segmento, ubicación y metadatos. Formato GeoJSON para importar en QGIS, Google Maps, Mapbox.
     </p>
     <ul style="font-size: 0.9rem; color: #666;">
-      <li><strong>Registros:</strong> ~400 establecimientos</li>
-      <li><strong>Campos clave:</strong> nom_estab, score_electrolit, decil, segmento, colonia, direccion, lat, lon</li>
+      <li><strong>Registros:</strong> hasta 400 establecimientos (según pipeline)</li>
+      <li><strong>Campos clave:</strong> nombre/nom_estab, score_total, decil, segmento, colonia, direccion, lat, lon (lista completa en catalog.json)</li>
       <li><strong>Uso:</strong> Mapas interactivos, análisis espacial</li>
     </ul>
     <a href="./data/top400.web.geojson" download style="
@@ -45,10 +45,11 @@ display(sectionHeader({
   <div class="card">
     <h3>📊 Top 400 Establecimientos (CSV)</h3>
     <p style="color: #666; font-size: 0.9rem;">
-      Mismos datos en formato CSV tabular para importar en Excel, CRM (Salesforce, HubSpot), ERP o bases de datos.
+      Mismos datos que el Top 400 GeoJSON en formato CSV tabular para importar en Excel, CRM (Salesforce, HubSpot), ERP o bases de datos. Generado por el pipeline (Step 05).
     </p>
     <ul style="font-size: 0.9rem; color: #666;">
-      <li><strong>Registros:</strong> ~400 establecimientos</li>
+      <li><strong>Registros:</strong> hasta 400 establecimientos</li>
+      <li><strong>Campos:</strong> mismos que GeoJSON (nombre, score_total, decil, segmento, colonia, direccion, lat, lon, etc.); ver catalog.json</li>
       <li><strong>Formato:</strong> UTF-8, delimitado por comas</li>
       <li><strong>Uso:</strong> CRM, reporting, análisis en Excel/Python</li>
     </ul>
@@ -131,6 +132,50 @@ display(sectionHeader({
   </div>
   
   <div class="card">
+    <h3>🚚 Top 10 CEDIS (CSV)</h3>
+    <p style="color: #666; font-size: 0.9rem;">
+      Ubicaciones óptimas para CEDIS con métricas de cobertura (merge de top10_hubs y top10_logistica).
+    </p>
+    <ul style="font-size: 0.9rem; color: #666;">
+      <li><strong>Registros:</strong> 10 ubicaciones</li>
+      <li><strong>Campos:</strong> ranking, nombre, lat, lon, cobertura, score</li>
+      <li><strong>Uso:</strong> Evaluación de ubicación de CEDIS, logística</li>
+    </ul>
+    <a href="./data/top10_cedis.web.csv" download style="
+      display: inline-block;
+      background: #1565c0;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      margin-top: 1rem;
+    ">Descargar CSV</a>
+  </div>
+  
+  <div class="card">
+    <h3>📊 Muestra Scored (GeoJSON)</h3>
+    <p style="color: #666; font-size: 0.9rem;">
+      Muestra de establecimientos con scoring para mapas y análisis espacial (fallback DENUE en loaders).
+    </p>
+    <ul style="font-size: 0.9rem; color: #666;">
+      <li><strong>Registros:</strong> ~1000 establecimientos</li>
+      <li><strong>Campos:</strong> nom_estab, segmento, score, coordenadas</li>
+      <li><strong>Uso:</strong> Capa de establecimientos en mapas</li>
+    </ul>
+    <a href="./data/scored.sample.web.geojson" download style="
+      display: inline-block;
+      background: #5d4037;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      margin-top: 1rem;
+    ">Descargar GeoJSON</a>
+  </div>
+  
+  <div class="card">
     <h3>📋 Top 20 Comercial (CSV)</h3>
     <p style="color: #666; font-size: 0.9rem;">
       Lista reducida de los 20 establecimientos de máxima prioridad para prospección inmediata.
@@ -150,6 +195,50 @@ display(sectionHeader({
       font-weight: 600;
       margin-top: 1rem;
     ">Descargar CSV</a>
+  </div>
+  
+  <div class="card">
+    <h3>⏱️ Isócronas de Cobertura (GeoJSON)</h3>
+    <p style="color: #666; font-size: 0.9rem;">
+      Polígonos de isócronas de 5, 10 y 15 minutos desde ubicaciones candidatas de CEDIS.
+    </p>
+    <ul style="font-size: 0.9rem; color: #666;">
+      <li><strong>Registros:</strong> 3 polígonos por punto</li>
+      <li><strong>Campos:</strong> time_minutes, area_km2, provider</li>
+      <li><strong>Uso:</strong> Análisis de cobertura, planificación de rutas</li>
+    </ul>
+    <a href="./data/isocronas_5_10_15.web.geojson" download style="
+      display: inline-block;
+      background: #00897b;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      margin-top: 1rem;
+    ">Descargar GeoJSON</a>
+  </div>
+  
+  <div class="card">
+    <h3>📊 Métricas del Análisis (JSON)</h3>
+    <p style="color: #666; font-size: 0.9rem;">
+      Resumen de métricas clave del análisis: totales, promedios, distribuciones.
+    </p>
+    <ul style="font-size: 0.9rem; color: #666;">
+      <li><strong>Contenido:</strong> KPIs, distribución por segmento/decil</li>
+      <li><strong>Formato:</strong> JSON estructurado</li>
+      <li><strong>Uso:</strong> Integración con dashboards, reportes automatizados</li>
+    </ul>
+    <a href="./data/metrics.json" download style="
+      display: inline-block;
+      background: #5e35b1;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      margin-top: 1rem;
+    ">Descargar JSON</a>
   </div>
 </div>
 
@@ -174,13 +263,13 @@ display(html`
 
 ### Importar a CRM (Salesforce, HubSpot, Zoho)
 
-1. **Descargar Top 400 en CSV**
-2. **Mapear campos:**
-   - `nom_estab` → Nombre de la Cuenta
+1. **Descargar Top 400 en CSV** (archivo `top400.web.csv`)
+2. **Mapear campos** (nombres según catalog.json):
+   - `nombre` o `nom_estab` → Nombre de la Cuenta
    - `direccion` → Dirección
    - `colonia` → Barrio/Distrito
    - `segmento` → Categoría/Tag
-   - `score_electrolit` → Campo personalizado "Score de Prioridad"
+   - `score_total` → Campo personalizado "Score de Prioridad"
    - `decil` → Campo personalizado "Decil"
    - `lat`, `lon` → Geolocalización (si el CRM lo soporta)
 3. **Importar usando el asistente de importación del CRM**

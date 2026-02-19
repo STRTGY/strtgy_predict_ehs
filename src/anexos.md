@@ -122,43 +122,117 @@ Formato de archivo geoespacial comprimido, más ligero que GeoJSON. Usado para p
 
 ## Diccionario de Campos (Datasets)
 
-### Top 400 Establecimientos
+Los nombres y tipos siguientes coinciden con **catalog.json** y con los archivos `.web.geojson` / `.web.csv` generados por el pipeline Midmen (Step 05). La lista completa de columnas por dataset está en `data/catalog.json`.
+
+### Top 400 Establecimientos (`top400.web.geojson`)
+
+Derivado de `establecimientos_scored.web.geojson` (top 400 por `score_total`). Propiedades principales:
 
 | Campo | Tipo | Descripción | Ejemplo |
 |-------|------|-------------|---------|
-| `nom_estab` | string | Nombre del establecimiento | "OXXO Santa Fe" |
-| `segmento` | string | Categoría de negocio | "retail", "horeca", "institucional" |
-| `score_electrolit` | float | Score de potencial [0–100] | 87.3 |
-| `decil` | integer | Decil de priorización [1–10] | 9 |
-| `colonia` | string | Colonia o fraccionamiento | "Villa de Seris" |
-| `direccion` | string | Dirección completa | "Blvd. Luis Encinas 123" |
-| `lat` | float | Latitud (WGS84) | 29.0856 |
-| `lon` | float | Longitud (WGS84) | -110.9612 |
-| `scian` | string | Código SCIAN (6 dígitos) | "461110" |
-| `CVEGEO` | string | Clave de AGEB donde se ubica | "2603000010001" |
+| `nombre` | string | Nombre del establecimiento (alias añadido en Step 05) | "OXXO Santa Fe" |
+| `nom_estab` | string | Nombre en fuente DENUE | "OXXO Santa Fe" |
+| `scian_6dig` | string | Código SCIAN 6 dígitos | "461110" |
+| `scian_rama` | string | Rama SCIAN | "Comercio al por menor" |
+| `score_total` | float | Score de potencial compuesto [0–100] | 87.3 |
+| `decil_prioridad` | integer | Decil de priorización [1–10]; 10 = mayor prioridad | 9 |
+| `score_fit_base`, `score_estrato`, `score_pob`, `score_volumen` | float | Componentes del score | — |
+| `es_prioritario` | boolean | Indica si entra en criterio SCIAN prioritario | true |
+| `geometry` | Point | Coordenadas WGS84 (GeoJSON) | {...} |
 
-### AGEBs Base
+Otros campos en el archivo: `score_margen`, `score_accesibilidad`, `score_competencia`, `perfil_cliente`, `score_fit`, `tiene_telefono`, `tiene_correo`, `tiene_web`, `score_contactabilidad`, `score_antiguedad`, `score_total_raw`, etc. Ver **catalog.json** → `establecimientos_scored` para la lista completa.
 
-| Campo | Tipo | Descripción | Ejemplo |
-|-------|------|-------------|---------|
-| `CVEGEO` | string | Clave geoestadística única | "2603000010001" |
-| `POBTOT` | integer | Población total (SCINCE 2020) | 3,245 |
-| `nse_dominante` | string | NSE predominante en la AGEB | "C", "C+", "D+" |
-| `densidad_comercial` | float | Establecimientos/km² | 125.3 |
-| `im_2020` | string | Índice de marginación | "Muy Baja", "Baja", "Media" |
-| `geometry` | geometry | Polígono de la AGEB (GeoJSON) | {...} |
+### Establecimientos Scored (`establecimientos_scored.web.geojson`)
 
-### Top 10 Hubs Logísticos
+Capa completa de establecimientos puntuados. Mismas columnas que Top 400 (incluye `nombre` añadido en Step 05). Usado para dashboard y mapas cuando se requiere el conjunto completo.
+
+### AGEBs Base (`agebs_base.web.geojson`)
+
+Polígonos de AGEBs urbanas con variables SCINCE 2020. Más de 3 400 columnas; principales:
 
 | Campo | Tipo | Descripción | Ejemplo |
 |-------|------|-------------|---------|
-| `ranking` | integer | Posición en el ranking [1–10] | 1 |
-| `nombre` | string | Referencia o nombre de la zona | "Parque Industrial Norte" |
-| `lat` | float | Latitud del hub candidato | 29.1234 |
-| `lon` | float | Longitud del hub candidato | -110.8765 |
-| `cobertura_30min` | float | % de Top 400 alcanzables en 30 min | 0.78 (78%) |
-| `tiempo_prom_min` | float | Tiempo promedio a Top 400 (minutos) | 18.5 |
-| `score_logistico` | float | Score compuesto de idoneidad logística | 92.1 |
+| `CVEGEO` | string | Clave geoestadística única (13 dígitos) | "2603000010001" |
+| `POB1` … `POB81`, `POB*_R` | number | Población por edad y rangos (SCINCE) | — |
+| `ECO*`, `ECO*_R` | number | Variables económicas | — |
+| `EDU*`, `EDU*_R` | number | Educación | — |
+| `GRADO_MARG` | string | Grado de marginación CONAPO | — |
+| `HOGAR*`, `DISC*`, `INDI*`, `MIG*` | number | Hogar, discapacidad, indígena, migración | — |
+| `geometry` | Polygon | Polígono del AGEB (WGS84) | {...} |
+
+Lista completa de columnas: **catalog.json** → `agebs_base` (más de 3 400 variables).
+
+### Zonas de Oportunidad (`zonas_oportunidad.web.geojson`)
+
+Estructura de propiedades idéntica a **agebs_base** (mismas columnas SCINCE). No incluye campos `pob_total` ni `oportunidad_tipo` en el GeoJSON; las vistas que los usan pueden derivarlos de agregados (p. ej. suma de POB* para población) o de capas auxiliares.
+
+### Top 10 Hubs y Top 10 CEDIS
+
+**`top10_hubs.web.csv`** (candidatos por score):
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `ranking` | integer | Posición [1–10] |
+| `lat`, `lon` | float | Coordenadas WGS84 |
+| `score` | float | Score de idoneidad |
+| `score_network_centrality` | float | Centralidad de red |
+
+**`top10_logistica.web.csv`** (cobertura y negocios por tiempo):
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `ranking` | integer | Posición [1–10] (clave de cruce) |
+| `lat`, `lon` | float | Coordenadas WGS84 |
+| `score` | float | Score logístico |
+| `businesses_5min`, `businesses_10min` | integer | Establecimientos alcanzables en 5 y 10 min |
+| `coverage_5min`, `coverage_10min` | float | Cobertura (p. ej. fracción del Top 400) en 5 y 10 min |
+| `score_adjusted` | float | Score ajustado por cobertura |
+
+**`top10_cedis.web.csv`** es la fusión de ambos por `ranking`; columnas resultantes según Step 05: las de **top10_hubs** más las de **top10_logistica** (sin duplicar `ranking`, `lat`, `lon`, `score`). Si el CSV generado usa otros nombres (p. ej. `rank`, `latitude`, `longitude`, `customers_5km`), consultar el encabezado del archivo o **catalog.json** → `top10_cedis`.
+
+### Isócronas
+
+**`hub_isochrones.web.geojson`** (polígonos por CEDIS; origen: Step 03 `cedis_isochrones`):
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `cedis_id` | string | Identificador del hub/CEDIS |
+| `time_minutes` | integer | Tiempo de viaje (min) |
+| `range_value` | number | Valor del rango (distancia o tiempo según proveedor) |
+| `range_type`, `range_type_raw` | string | Tipo de rango (tiempo/distancia) |
+| `transport_mode`, `provider` | string | Modo y proveedor (p. ej. HERE) |
+| `origin_lat`, `origin_lon` | float | Origen del servicio |
+| `departure_time` | string | Hora de salida (opcional) |
+| `geometry` | Polygon | Polígono de la isócrona (WGS84) |
+
+**`isocronas_5_10_15.web.geojson`** (Step 04; incluye negocio y origen):
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `origin_id` | string | Identificador del hub/origen (alias en UI: `hub_id`) |
+| `time_minutes` | integer | 5, 10 o 15 minutos |
+| `business_count` | integer | Establecimientos priorizados dentro del polígono |
+| `origin_lat`, `origin_lon` | float | Origen |
+| `range_value`, `transport_mode`, `provider` | — | Igual que hub_isochrones |
+| `geometry` | Polygon | Polígono (WGS84) |
+
+### Top 20 Comercial (`top20_comercial.web.csv`)
+
+Top 20 establecimientos por `score_total`. Columnas típicas: `lon`, `lat`, `nombre`, `nom_estab` (y las que Step 05 incluya del GeoJSON de establecimientos). Ver **catalog.json** → `top20_comercial` si existe.
+
+### DENUE Categorías SCIAN (`denue_hermosillo_categorias_scian.web.csv`)
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `scian_rama` | string | Rama o categoría SCIAN |
+| `n_establecimientos` | integer | Número de establecimientos en la categoría |
+| `n_prioritarios` | integer | Establecimientos prioritarios (criterio Electrolit) |
+| `score_fit_promedio` | float | Score de ajuste promedio |
+| `pct_total` | float | Porcentaje sobre el total |
+
+### Sweet Spots (`sweetspot_top10.web.geojson`, `sweetspot_top10_v2.web.geojson`)
+
+Top 10 candidatos CEDIS desde `cedis_candidates.geojson`. Propiedades: mismas que **puntos_candidatos_cedis** (p. ej. `CVEGEO`, scores de cobertura y centralidad). Ver **catalog.json** → `sweetspot_top10` o `puntos_candidatos_cedis` para columnas completas.
 
 ---
 

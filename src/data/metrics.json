@@ -1,0 +1,64 @@
+{
+  "metrics": {
+    "total_establishments": 4240,
+    "avg_score": 37.34925392585993,
+    "median_score": 18.95674086176954,
+    "max_score": 100.0,
+    "min_score": 0.0,
+    "top_100_avg_score": 98.26589255148514,
+    "profile_distribution": {
+      "E": 3427,
+      "C": 813
+    },
+    "cedis_top_score": 100.0,
+    "cedis_avg_score": 99.77013469366095
+  },
+  "config": {
+    "client_name": "midmen",
+    "project_id": "electrolit_hermosillo",
+    "scian_codes": [
+      "461110",
+      "722514",
+      "721111",
+      "468411",
+      "722512",
+      "431213",
+      "722517",
+      "713940",
+      "722518",
+      "464112",
+      "713950",
+      "721112",
+      "431211",
+      "722513",
+      "722511",
+      "462112",
+      "462111",
+      "464111",
+      "431212",
+      "431110",
+      "722515"
+    ],
+    "center_coordinates": [
+      29.0729,
+      -110.9559
+    ],
+    "n_cedis_candidates": 10,
+    "isochrone_minutes": [
+      5,
+      10,
+      15
+    ]
+  },
+  "timestamp": "2026-02-19T14:53:06.780900",
+  "counts": {
+    "establecimientos": 4240,
+    "agebs": 575,
+    "cedis_candidates": 10,
+    "isochrones": 30
+  },
+  "spatial_analysis": {},
+  "total_establecimientos": 4240,
+  "client": "midmen",
+  "project": "electrolit_hermosillo"
+}

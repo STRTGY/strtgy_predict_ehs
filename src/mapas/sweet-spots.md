@@ -14,10 +14,27 @@ import {createMap, createMarker, createCircle, addPopup, addTooltip, createLegen
 const sweetspots = await FileAttachment("../data/sweetspot_top10.web.geojson").json();
 const top400 = await FileAttachment("../data/top400.web.geojson").json();
 
-// Sort by ranking
-const sweetspotsSorted = sweetspots.features.sort((a, b) => 
-  (a.properties.ranking || 999) - (b.properties.ranking || 999)
-);
+// Ordenar por score_compuesto (mayor a menor) y enriquecer con ranking y score comercial derivado
+const sweetspotsSorted = sweetspots.features
+  .sort((a, b) => (b.properties.score_compuesto || 0) - (a.properties.score_compuesto || 0))
+  .map((f, idx) => {
+    const p = f.properties;
+    const scoreLogistico = p.score_logistico || 0;
+    const scoreCompuesto = p.score_compuesto || 0;
+    
+    // Derivar score comercial: score_compuesto = 0.6*logistico + 0.4*comercial
+    // Por tanto: comercial = (compuesto - 0.6*logistico) / 0.4
+    const scoreComercial = scoreLogistico > 0 ? ((scoreCompuesto - 0.6 * scoreLogistico) / 0.4) : 0;
+    
+    return {
+      ...f,
+      properties: {
+        ...p,
+        ranking: idx + 1,
+        score_comercial: Math.max(0, scoreComercial) // Asegurar que no sea negativo
+      }
+    };
+  });
 ```
 
 ## ¿Qué es un Sweet Spot?
@@ -34,41 +51,65 @@ Un **Sweet Spot** es una ubicación que maximiza simultáneamente:
 ## Top 10 Sweet Spots
 
 ```js
-display(html`
-  <div class="card">
-    <h3>Ranking de Sweet Spots</h3>
-    <table style="width: 100%; margin-top: 10px;">
-      <thead>
-        <tr>
-          <th>Ranking</th>
-          <th>Score Compuesto</th>
-          <th>Score Logístico</th>
-          <th>Score Comercial</th>
-          <th>Clientes 5km</th>
-          <th>Establecimientos 2km</th>
-          <th>Coordenadas</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${sweetspotsSorted.map(f => {
-          const p = f.properties;
-          const coords = f.geometry.coordinates;
-          return `
-            <tr>
-              <td><strong>#${p.ranking || 'N/A'}</strong></td>
-              <td><strong>${p.score_compuesto?.toFixed(1) || 'N/A'}</strong></td>
-              <td>${p.score_logistico?.toFixed(1) || 'N/A'}</td>
-              <td>${p.score_comercial?.toFixed(1) || 'N/A'}</td>
-              <td>${p.clientes_5km || 'N/A'}</td>
-              <td>${p.establecimientos_2km || 'N/A'}</td>
-              <td><small>${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}</small></td>
-            </tr>
-          `;
-        }).join('')}
-      </tbody>
-    </table>
-  </div>
-`);
+// Crear tabla con DOM manipulation para evitar escape de HTML
+const sweetspotCard = document.createElement("div");
+sweetspotCard.className = "card";
+
+const cardTitle = document.createElement("h3");
+cardTitle.textContent = "Ranking de Sweet Spots";
+sweetspotCard.appendChild(cardTitle);
+
+const table = document.createElement("table");
+table.style.cssText = "width: 100%; margin-top: 10px; border-collapse: collapse; font-size: 13px;";
+
+// Header
+const thead = document.createElement("thead");
+thead.innerHTML = `
+  <tr style="background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);">
+    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Ranking</th>
+    <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">Score Compuesto</th>
+    <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">Logístico (60%)</th>
+    <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">Comercial (40%)</th>
+    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Coordenadas</th>
+    <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">Google Maps</th>
+  </tr>
+`;
+table.appendChild(thead);
+
+// Body
+const tbody = document.createElement("tbody");
+sweetspotsSorted.forEach((f, i) => {
+  const p = f.properties;
+  const coords = f.geometry.coordinates;
+  const row = document.createElement("tr");
+  
+  // Colores según ranking
+  const ranking = p.ranking || (i + 1);
+  const isTop1 = ranking === 1;
+  const isTop3 = ranking <= 3;
+  const bgColor = isTop1 ? 'rgba(211, 47, 47, 0.1)' : isTop3 ? 'rgba(245, 124, 0, 0.08)' : (i % 2 === 0 ? '#fff' : '#fafafa');
+  const rankColor = isTop1 ? '#d32f2f' : isTop3 ? '#f57c00' : '#fbc02d';
+  
+  row.style.background = bgColor;
+  row.innerHTML = `
+    <td style="padding: 8px; border: 1px solid #ddd;">
+      <strong style="color: ${rankColor};">#${ranking}</strong>
+      ${isTop1 ? ' ⭐' : isTop3 ? ' 🚩' : ' 🎯'}
+    </td>
+    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: 700; color: ${rankColor}; font-size: 1.1em;">${p.score_compuesto?.toFixed(1) || 'N/A'}</td>
+    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #1565c0; font-weight: 600;">${p.score_logistico?.toFixed(1) || 'N/A'}</td>
+    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #2e7d32; font-weight: 600;">${p.score_comercial?.toFixed(1) || 'N/A'}</td>
+    <td style="padding: 8px; border: 1px solid #ddd; font-size: 0.85em; color: #666;">${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}</td>
+    <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+      <a href="https://www.google.com/maps?q=${coords[1]},${coords[0]}" target="_blank" style="color: ${rankColor}; text-decoration: none;">🗺️ Ver</a>
+    </td>
+  `;
+  tbody.appendChild(row);
+});
+table.appendChild(tbody);
+
+sweetspotCard.appendChild(table);
+display(sweetspotCard);
 ```
 
 ## Mapa Interactivo
@@ -84,15 +125,12 @@ const map = createMap(mapContainer);
 top400.features.forEach(feature => {
   const coords = feature.geometry.coordinates;
   const latlng = [coords[1], coords[0]];
-  const decil = feature.properties.decil;
-  
-  const color = decil === 1 ? "#1a237e" : decil <= 3 ? "#3949ab" : "#9fa8da";
   
   const marker = createCircleMarker(latlng, {
     radius: 3,
-    color: color,
-    fillColor: color,
-    fillOpacity: 0.4,
+    color: "#3949ab",
+    fillColor: "#3949ab",
+    fillOpacity: 0.5,
     weight: 1
   });
   
@@ -128,25 +166,30 @@ sweetspotsSorted.forEach(feature => {
   
   // Popup content
   const popupContent = `
-    <div style="font-family: Arial; min-width: 280px;">
+    <div style="font-family: Arial; min-width: 260px;">
       <h4 style="color: ${markerColor}; margin: 0 0 10px 0;">${iconType === "star" ? "⭐" : iconType === "flag" ? "🚩" : "🎯"} Sweet Spot #${ranking}</h4>
-      <h5 style="margin: 5px 0;">🎯 UBICACIÓN ÓPTIMA COMBINADA</h5>
+      <div style="background: ${markerColor}; color: white; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-bottom: 8px; font-size: 0.8em;">
+        UBICACIÓN ÓPTIMA COMBINADA
+      </div>
       <hr style="margin: 8px 0;">
-      <b>Score Compuesto:</b> <span style="font-size: 16px; color: ${markerColor}; font-weight: bold;">${props.score_compuesto?.toFixed(1) || 'N/A'}/100</span><br>
-      <small>(60% Logística + 40% Comercial)</small>
-      <hr style="margin: 8px 0;">
-      <b>📊 Componentes:</b><br>
-      • Score Logístico: <b>${props.score_logistico?.toFixed(1) || 'N/A'}</b><br>
-      • Score Comercial: <b>${props.score_comercial?.toFixed(1) || 'N/A'}</b><br>
-      <hr style="margin: 8px 0;">
-      <b>📦 Eficiencia Logística:</b><br>
-      • Clientes 5km: <b>${props.clientes_5km || 'N/A'}</b><br>
-      • Clientes 10km: <b>${props.clientes_10km || 'N/A'}</b><br>
-      <hr style="margin: 8px 0;">
-      <b>💰 Potencial Comercial (radio 2km):</b><br>
-      • Establecimientos: <b>${props.establecimientos_2km || 'N/A'}</b><br>
-      <hr style="margin: 8px 0;">
-      <a href="https://www.google.com/maps?q=${latlng[0]},${latlng[1]}" target="_blank" style="color: ${markerColor};">
+      <div style="text-align: center; padding: 10px; background: #f5f5f5; border-radius: 8px; margin-bottom: 10px;">
+        <div style="font-size: 1.8em; color: ${markerColor}; font-weight: bold;">${props.score_compuesto?.toFixed(1) || 'N/A'}</div>
+        <div style="font-size: 0.8em; color: #666;">Score Compuesto / 100</div>
+      </div>
+      <b>📊 Componentes:</b>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
+        <div style="background: rgba(21,101,192,0.1); padding: 8px; border-radius: 4px; text-align: center;">
+          <div style="color: #1565c0; font-weight: bold;">${props.score_logistico?.toFixed(1) || 'N/A'}</div>
+          <div style="font-size: 0.75em; color: #666;">Logístico (60%)</div>
+        </div>
+        <div style="background: rgba(46,125,50,0.1); padding: 8px; border-radius: 4px; text-align: center;">
+          <div style="color: #2e7d32; font-weight: bold;">${props.score_comercial?.toFixed(1) || 'N/A'}</div>
+          <div style="font-size: 0.75em; color: #666;">Comercial (40%)</div>
+        </div>
+      </div>
+      <hr style="margin: 10px 0 8px 0;">
+      <a href="https://www.google.com/maps?q=${latlng[0]},${latlng[1]}" target="_blank" 
+         style="display: block; text-align: center; color: ${markerColor}; font-weight: bold; text-decoration: none;">
         🗺️ Ver en Google Maps
       </a>
     </div>
@@ -165,23 +208,21 @@ sweetspotsSorted.forEach(feature => {
     weight: 1,
     opacity: 0.3
   });
-  addPopup(circle2km, `Radio 2km - ${props.establecimientos_2km || 'N/A'} establecimientos`);
+  addPopup(circle2km, `Radio 2km - Sweet Spot #${ranking}`);
   circle2km.addTo(map);
 });
 
-// Create legend
+// Create legend - solo elementos presentes
 createLegend(map, [
   {type: "header", label: "Sweet Spots"},
-  {type: "circle", color: "#d32f2f", label: "⭐ Sweet Spot #1 (Óptimo)"},
-  {type: "circle", color: "#f57c00", label: "🚩 Sweet Spots #2-3"},
-  {type: "circle", color: "#fbc02d", label: "🎯 Sweet Spots #4-10"},
+  {type: "circle", color: "#d32f2f", label: "⭐ #1 (Óptimo)"},
+  {type: "circle", color: "#f57c00", label: "🚩 #2-3"},
+  {type: "circle", color: "#fbc02d", label: "🎯 #4-10"},
   {type: "separator"},
-  {type: "header", label: "Establecimientos Top 400"},
-  {type: "circle", color: "#1a237e", label: "Decil 1 (Prioridad Alta)"},
-  {type: "circle", color: "#3949ab", label: "Deciles 2-3"},
-  {type: "circle", color: "#9fa8da", label: "Deciles 4-10"},
+  {type: "header", label: "Establecimientos"},
+  {type: "circle", color: "#3949ab", label: "Top 400"},
   {type: "separator"},
-  {type: "line", color: "#d32f2f", label: "Radio 2km (referencia)"}
+  {type: "square", color: "rgba(211,47,47,0.1)", label: "Radio 2km"}
 ], "bottomright");
 ```
 
@@ -196,45 +237,73 @@ const avgComercial = sweetspotsSorted.reduce((sum, f) => sum + (f.properties.sco
 const top1 = sweetspotsSorted[0]?.properties;
 const top1Coords = sweetspotsSorted[0]?.geometry.coordinates;
 
-display(html`
-  <div class="grid grid-cols-2">
-    <div class="card">
-      <h3>⭐ Sweet Spot #1 (Recomendado)</h3>
-      <div style="margin: 15px 0;">
-        <div style="font-size: 2.5em; font-weight: bold; color: #d32f2f;">${top1?.score_compuesto?.toFixed(1) || 'N/A'}</div>
-        <div style="font-size: 0.9em; color: #666;">Score Compuesto / 100</div>
-      </div>
-      <hr>
-      <p><strong>Fortalezas:</strong></p>
-      <ul>
-        <li><strong>${top1?.clientes_5km || 'N/A'}</strong> clientes en radio de 5km</li>
-        <li><strong>${top1?.clientes_10km || 'N/A'}</strong> clientes en radio de 10km</li>
-        <li><strong>${top1?.establecimientos_2km || 'N/A'}</strong> establecimientos cercanos</li>
-        <li>Score logístico: <strong>${top1?.score_logistico?.toFixed(1) || 'N/A'}</strong></li>
-      </ul>
-      <p><strong>📍 Coordenadas:</strong><br>
-        <code>${top1Coords?.[1]?.toFixed(6)}, ${top1Coords?.[0]?.toFixed(6)}</code>
-      </p>
+// Crear cards con DOM manipulation
+const gridContainer = document.createElement("div");
+gridContainer.className = "grid grid-cols-2";
+gridContainer.style.gap = "1rem";
+
+// Card 1: Sweet Spot #1
+const card1 = document.createElement("div");
+card1.className = "card";
+card1.style.cssText = "background: linear-gradient(135deg, #ffebee 0%, white 100%); border: 2px solid #d32f2f;";
+card1.innerHTML = `
+  <h3 style="margin-top: 0; color: #d32f2f;">⭐ Sweet Spot #1 (Recomendado)</h3>
+  <div style="margin: 15px 0; text-align: center;">
+    <div style="font-size: 3em; font-weight: bold; color: #d32f2f;">${top1?.score_compuesto?.toFixed(1) || 'N/A'}</div>
+    <div style="font-size: 0.9em; color: #666;">Score Compuesto / 100</div>
+  </div>
+  <hr style="border-color: #ffcdd2;">
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0;">
+    <div style="text-align: center; padding: 10px; background: rgba(21, 101, 192, 0.1); border-radius: 8px;">
+      <div style="font-size: 1.8em; font-weight: bold; color: #1565c0;">${top1?.score_logistico?.toFixed(1) || 'N/A'}</div>
+      <div style="font-size: 0.8em; color: #666;">Score Logístico</div>
     </div>
-    <div class="card">
-      <h3>📊 Promedios Top 10</h3>
-      <div style="margin: 20px 0;">
-        <div style="margin: 15px 0;">
-          <div style="font-size: 1.5em; font-weight: bold; color: #1565c0;">${avgCompuesto.toFixed(1)}</div>
-          <div style="font-size: 0.9em; color: #666;">Score Compuesto Promedio</div>
-        </div>
-        <div style="margin: 15px 0;">
-          <div style="font-size: 1.5em; font-weight: bold; color: #1565c0;">${avgLogistico.toFixed(1)}</div>
-          <div style="font-size: 0.9em; color: #666;">Score Logístico Promedio</div>
-        </div>
-        <div style="margin: 15px 0;">
-          <div style="font-size: 1.5em; font-weight: bold; color: #1565c0;">${avgComercial.toFixed(1)}</div>
-          <div style="font-size: 0.9em; color: #666;">Score Comercial Promedio</div>
-        </div>
+    <div style="text-align: center; padding: 10px; background: rgba(46, 125, 50, 0.1); border-radius: 8px;">
+      <div style="font-size: 1.8em; font-weight: bold; color: #2e7d32;">${top1?.score_comercial?.toFixed(1) || 'N/A'}</div>
+      <div style="font-size: 0.8em; color: #666;">Score Comercial</div>
+    </div>
+  </div>
+  <hr style="border-color: #ffcdd2;">
+  <p style="margin-bottom: 0.5rem;"><strong>📍 Coordenadas:</strong></p>
+  <code style="background: #f5f5f5; padding: 8px; display: block; border-radius: 4px; font-size: 0.9em;">
+    ${top1Coords?.[1]?.toFixed(6) || 'N/A'}, ${top1Coords?.[0]?.toFixed(6) || 'N/A'}
+  </code>
+  <a href="https://www.google.com/maps?q=${top1Coords?.[1]},${top1Coords?.[0]}" target="_blank" 
+     style="display: inline-block; margin-top: 10px; padding: 8px 16px; background: #d32f2f; color: white; text-decoration: none; border-radius: 4px; font-weight: 600;">
+    🗺️ Ver en Google Maps
+  </a>
+`;
+gridContainer.appendChild(card1);
+
+// Card 2: Promedios
+const card2 = document.createElement("div");
+card2.className = "card";
+card2.innerHTML = `
+  <h3 style="margin-top: 0;">📊 Promedios Top 10 Sweet Spots</h3>
+  <div style="margin: 20px 0;">
+    <div style="margin: 15px 0; text-align: center; padding: 15px; background: linear-gradient(135deg, #e3f2fd 0%, white 100%); border-radius: 8px;">
+      <div style="font-size: 2em; font-weight: bold; color: #d32f2f;">${avgCompuesto.toFixed(1)}</div>
+      <div style="font-size: 0.9em; color: #666;">Score Compuesto Promedio</div>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div style="text-align: center; padding: 12px; background: #f5f5f5; border-radius: 8px; border-left: 4px solid #1565c0;">
+        <div style="font-size: 1.5em; font-weight: bold; color: #1565c0;">${avgLogistico.toFixed(1)}</div>
+        <div style="font-size: 0.85em; color: #666;">Logístico Prom.</div>
+      </div>
+      <div style="text-align: center; padding: 12px; background: #f5f5f5; border-radius: 8px; border-left: 4px solid #2e7d32;">
+        <div style="font-size: 1.5em; font-weight: bold; color: #2e7d32;">${avgComercial.toFixed(1)}</div>
+        <div style="font-size: 0.85em; color: #666;">Comercial Prom.</div>
       </div>
     </div>
   </div>
-`);
+  <hr>
+  <p style="font-size: 0.9em; color: #666; margin-bottom: 0;">
+    <strong>Fórmula:</strong> Score = (0.6 × Logístico) + (0.4 × Comercial)
+  </p>
+`;
+gridContainer.appendChild(card2);
+
+display(gridContainer);
 ```
 
 ## Criterios de Selección

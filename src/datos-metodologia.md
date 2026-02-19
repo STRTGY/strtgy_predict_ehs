@@ -44,9 +44,6 @@ display(decisionCallout({
 <div style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); border-radius: 8px; padding: 1rem; margin: 1rem 0; text-align: center;">
   <div style="font-size: 1.75rem; font-weight: 700; color: #1565c0;">~12,000</div>
   <div style="font-size: 0.875rem; color: #666;">establecimientos registrados</div>
-  <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(0,0,0,0.1);">
-    <div style="font-size: 0.75rem; font-weight: 600; color: #2e7d32;">Calidad: 98%</div>
-  </div>
 </div>
 
 **📋 Campos utilizados:**
@@ -55,11 +52,6 @@ display(decisionCallout({
 - Dirección completa
 - Actividad económica (SCIAN 6 dígitos)
 - Fecha de alta
-
-**⚠️ Limitaciones:**
-- **MEDIO:** ~15% registros desactualizados
-- **BAJO:** Excluye economía informal
-- **BAJO:** Nombres genéricos en algunos casos
 
 </div>
 
@@ -71,9 +63,6 @@ display(decisionCallout({
 <div style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); border-radius: 8px; padding: 1rem; margin: 1rem 0; text-align: center;">
   <div style="font-size: 1.75rem; font-weight: 700; color: #1565c0;">673</div>
   <div style="font-size: 0.875rem; color: #666;">AGEBs urbanas</div>
-  <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(0,0,0,0.1);">
-    <div style="font-size: 0.75rem; font-weight: 600; color: #2e7d32;">Calidad: 95%</div>
-  </div>
 </div>
 
 **📋 Campos utilizados:**
@@ -81,11 +70,6 @@ display(decisionCallout({
 - Viviendas particulares habitadas
 - Variables demográficas (edad, sexo, escolaridad)
 - Servicios en vivienda
-
-**⚠️ Limitaciones:**
-- **MEDIO:** Datos de 2020 (4 años de antigüedad)
-- **MEDIO:** Crecimiento post-censo no reflejado
-- **BAJO:** AGEBs nuevas sin datos
 
 </div>
 
@@ -97,9 +81,6 @@ display(decisionCallout({
 <div style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); border-radius: 8px; padding: 1rem; margin: 1rem 0; text-align: center;">
   <div style="font-size: 1.75rem; font-weight: 700; color: #1565c0;">5 niveles</div>
   <div style="font-size: 0.875rem; color: #666;">de clasificación</div>
-  <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(0,0,0,0.1);">
-    <div style="font-size: 0.75rem; font-weight: 600; color: #2e7d32;">Calidad: 92%</div>
-  </div>
 </div>
 
 **📋 Campos utilizados:**
@@ -107,10 +88,6 @@ display(decisionCallout({
 - Calidad de vivienda
 - Servicios básicos
 - Nivel de ingresos
-
-**⚠️ Limitaciones:**
-- **MEDIO:** Índice a nivel AGEB
-- **BAJO:** No captura microzonas
 
 </div>
 
@@ -122,9 +99,6 @@ display(decisionCallout({
 <div style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); border-radius: 8px; padding: 1rem; margin: 1rem 0; text-align: center;">
   <div style="font-size: 1.75rem; font-weight: 700; color: #1565c0;">7 categorías</div>
   <div style="font-size: 0.875rem; color: #666;">(A/B hasta E)</div>
-  <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(0,0,0,0.1);">
-    <div style="font-size: 0.75rem; font-weight: 600; color: #f57c00;">Calidad: 68%</div>
-  </div>
 </div>
 
 **📋 Campos utilizados:**
@@ -132,10 +106,6 @@ display(decisionCallout({
 - Patrones de consumo
 - Escolaridad
 - Bienes en el hogar
-
-**⚠️ Limitaciones:**
-- **MEDIO:** Asignación por AGEB (proxy)
-- **MEDIO:** R² = 0.68 (precisión moderada)
 
 </div>
 
@@ -158,11 +128,11 @@ El proceso de análisis consta de 5 fases secuenciales:
 </div>
 <div style="padding: 1.5rem;">
 
-| Fuente | Método | Output | Herramienta |
-|--------|--------|--------|-------------|
-| API DENUE | REST | Establecimientos RAW | `requests` |
-| Shapefiles SCINCE | WFS | AGEBs + Población | `geopandas` |
-| Índices CONAPO | CSV | Marginación + NSE | `pandas` |
+| Fuente | Método | Output |
+|--------|--------|--------|
+| DENUE | Shapefile o repositorio por SCIAN | Establecimientos RAW |
+| SCINCE 2020 | Parquet (get_agebs) | AGEBs + Población |
+| Índices CONAPO/AMAI | Integrados en AGEB | Marginación + NSE |
 
 </div>
 </div>
@@ -176,11 +146,11 @@ El proceso de análisis consta de 5 fases secuenciales:
 </div>
 <div style="padding: 1.5rem;">
 
-| Proceso | Método | Output | Herramienta |
-|---------|--------|--------|-------------|
-| Spatial Join | Point-in-Polygon | Establecimientos + AGEB | `geopandas` |
-| Cálculo de densidades | Vectorizado | Métricas por AGEB | `numpy` |
-| Normalización | Z-score → percentil | Variables [0-100] | `scikit-learn` |
+| Proceso | Método | Output |
+|---------|--------|--------|
+| Spatial Join | Point-in-Polygon | Establecimientos + AGEB |
+| Cálculo de densidades | Vectorizado | Métricas por AGEB |
+| Normalización | Z-score → percentil | Variables [0-100] |
 
 </div>
 </div>
@@ -194,11 +164,11 @@ El proceso de análisis consta de 5 fases secuenciales:
 </div>
 <div style="padding: 1.5rem;">
 
-| Proceso | Método | Output | Herramienta |
-|---------|--------|--------|-------------|
-| Agregación ponderada | Σ(var × peso) | Score [0-100] | `numpy` |
-| Asignación de deciles | Clasificación | 10 grupos | `pandas` |
-| Segmentación | Por SCIAN | Retail/HORECA/Otro | `pandas` |
+| Proceso | Método | Output |
+|---------|--------|--------|
+| Agregación ponderada | Σ(var × peso) | Score [0-100] |
+| Asignación de deciles | Clasificación | 10 grupos |
+| Segmentación | Por SCIAN | Retail/HORECA/Otro |
 
 </div>
 </div>
@@ -212,11 +182,11 @@ El proceso de análisis consta de 5 fases secuenciales:
 </div>
 <div style="padding: 1.5rem;">
 
-| Test | Método | Resultado | Herramienta |
-|------|--------|-----------|-------------|
-| Consistencia geográfica | Boundary check | 97.8% válidos | `shapely` |
-| Detección de outliers | IQR | Flagged records | `pandas` |
-| Completitud | Null check | <5% missing | `pandas` |
+| Test | Método | Resultado |
+|------|--------|-----------|
+| Consistencia geográfica | Boundary check | 97.8% válidos |
+| Detección de outliers | IQR | Flagged records |
+| Completitud | Null check | <5% missing |
 
 </div>
 </div>
@@ -230,11 +200,10 @@ El proceso de análisis consta de 5 fases secuenciales:
 </div>
 <div style="padding: 1.5rem;">
 
-| Formato | Método | Uso | Herramienta |
-|---------|--------|-----|-------------|
-| GeoJSON | Simplificación | Mapas interactivos | `geopandas` |
-| CSV | Tabular | CRM/Excel | `pandas` |
-| TopoJSON | Compresión | Polígonos optimizados | `topojson` |
+| Formato | Método | Uso |
+|---------|--------|-----|
+| GeoJSON | Simplificación (.web) | Mapas interactivos |
+| CSV | Tabular (.web) | CRM/Excel, hubs, logística |
 
 </div>
 </div>
@@ -253,18 +222,20 @@ El proceso de análisis consta de 5 fases secuenciales:
 Score = Σ(Variable<sub>norm</sub> × Peso)
 </div>
 
-**Variables y Ponderaciones:**
+**Variables y Ponderaciones (modelo B2B Electrolit):**
 
-| Variable | Peso | Descripción | Normalización |
-|----------|------|-------------|---------------|
-| **Población AGEB** | 30% | Demanda potencial base | Z-score → percentil |
-| **Densidad comercial** | 25% | Competencia y actividad económica | Z-score → percentil |
-| **NSE** | 20% | Poder adquisitivo | Escala ordinal (E=0, A/B=100) |
-| **Proximidad a POIs** | 15% | Tráfico peatonal/vehicular | Distancia inversa |
-| **Marginación inversa** | 10% | Infraestructura y servicios | Inversa lineal |
+| Variable | Peso | Descripción | Fuente |
+|----------|------|-------------|--------|
+| **Volumen potencial** | 20% | Estrato de empleados, población del AGEB | DENUE + SCINCE |
+| **Margen estimado** | 15% | Tipo de establecimiento, NSE del AGEB | DENUE + NSE |
+| **Accesibilidad logística** | 20% | Distancia a CEDIS, clustering | Geometría + HERE |
+| **Competencia local** | 10% | Densidad de distribuidores de bebidas cercanos | DENUE |
+| **Fit Electrolit** | 20% | Perfil de cliente ideal (A–E por SCIAN) | Config + DENUE |
+| **Contactabilidad** | 10% | Completitud de datos de contacto | DENUE |
+| **Antigüedad y estabilidad** | 5% | Años desde fecha de alta | DENUE |
 
 <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.7); border-radius: 8px; border-left: 4px solid #ff9800;">
-<strong>⚙️ Configurabilidad:</strong> Los pesos son ajustables según la estrategia de negocio. Electrolit puede modificarlos post-piloto con datos reales de ventas.
+<strong>Configurabilidad:</strong> Los pesos se cargan desde la configuración del proyecto (scoring_weights) y pueden ajustarse post-piloto con datos reales de ventas.
 </div>
 
 </div>
@@ -272,6 +243,8 @@ Score = Σ(Variable<sub>norm</sub> × Peso)
 ---
 
 ## 2.3. Métricas de Calidad de Datos
+
+Las cifras siguientes son **referenciales** y pueden variar según el conjunto de datos y la ejecución actual del pipeline.
 
 <div class="grid grid-cols-4" style="gap: 1rem; margin: 2rem 0;">
 
@@ -308,36 +281,29 @@ Score = Σ(Variable<sub>norm</sub> × Peso)
 
 ## 2.4. Criterios de Filtrado y Segmentación
 
-### 🎯 Filtros SCIAN Aplicados
+### Filtros SCIAN Aplicados (Electrolit Hermosillo)
+
+Los códigos SCIAN se definen en la configuración del proyecto (`electrolit_hermosillo.yaml`) y se aplican en el Step 02 (DENUE commercial). Se distinguen dos conceptos:
+
+- **Códigos prioritarios (`scian_electrolit`):** Los 9 códigos con los que se construye el scoring y la priorización de establecimientos en este reporte. Son la fuente de la tabla de categorías y del conteo de establecimientos "prioritarios" en mapas y analítico. No incluyen 463xxx (en INEGI, 463xxx corresponde a comercio al por menor, no mayoreo).
+- **Industrias foco (`industrias_foco`):** Conjunto más amplio en la configuración que incluye además HORECA, gimnasios, hoteles y gasolineras para filtrado DENUE o análisis complementario; el reporte y los rankings se basan en los **prioritarios**.
 
 <div style="margin: 2rem 0;">
 
-#### 🛒 Sector 46: Comercio al por menor (Retail)
-**Incluido** • 4 códigos SCIAN
+#### Códigos prioritarios (scian_electrolit) — 9 códigos
 
-- `461110` — Supermercados
-- `461130` — Tiendas de abarrotes
-- `461122` — Farmacias
-- `462112` — Tiendas de conveniencia
+**Mayoreo (rama 43):**
+- `431110` — Comercio al por mayor de abarrotes
+- `431211` — Comercio al por mayor de bebidas no alcohólicas y hielo
+- `431212` — Comercio al por mayor de vinos y licores
+- `431213` — Comercio al por mayor de cerveza
 
-#### 🍽️ Sector 72: Servicios de alojamiento y alimentación (HORECA)
-**Incluido** • 3 códigos SCIAN
-
-- `722511` — Restaurantes con servicio completo
-- `722513` — Cafeterías y fuentes de sodas
-- `721111` — Hoteles
-
-#### 💪 Otros: Servicios complementarios
-**Incluido** • 2 códigos SCIAN
-
-- `713940` — Gimnasios y centros deportivos
-- `621111` — Consultorios médicos (clínicas privadas)
-
-#### ⛔ Sectores Excluidos
-**Excluido por relevancia**
-
-- `811` — Servicios de reparación y mantenimiento
-- `812` — Servicios personales (peluquerías, lavanderías)
+**Retail y farmacias:**
+- `461110` — Comercio al por menor en tiendas de abarrotes, ultramarinos y misceláneas
+- `462111` — Comercio al por menor en supermercados
+- `462112` — Comercio al por menor en minisupers (tiendas de conveniencia)
+- `464111` — Farmacias sin minisúper
+- `464112` — Farmacias con minisúper
 
 </div>
 

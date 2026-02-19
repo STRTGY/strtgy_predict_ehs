@@ -193,6 +193,9 @@ export function table(data, columns, {sortable = true, exportable = true, pageSi
         
         if (displayValue instanceof HTMLElement) {
           td.appendChild(displayValue);
+        } else if (typeof displayValue === "string" && displayValue.includes("<") && displayValue.includes(">")) {
+          // String contains HTML, use innerHTML
+          td.innerHTML = displayValue;
         } else {
           td.textContent = displayValue ?? "—";
         }

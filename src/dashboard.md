@@ -6,13 +6,41 @@ toc: false
 ```js
 import {sectionHeader, decisionCallout} from "./components/brand.js";
 import {kpi, formatNumber, table} from "./components/ui.js";
-import {createBaseMap, addGeoJsonLayer, styleByScore, getColorForScore, createLegend, fitBounds, createEstablishmentPopup, createLayerControl} from "./components/maps.js";
+import {createBaseMap, addGeoJsonLayer, styleByScore, getColorForScore, createLegend, fitBounds, createEstablishmentPopup, createLayerControl, L} from "./components/maps.js";
 
 // Cargar todos los datasets
-const top400 = await FileAttachment("data/top400.web.geojson").json();
+const establecimientos = await FileAttachment("data/establecimientos_scored.web.geojson").json();
 const agebs = await FileAttachment("data/agebs_base.web.geojson").json();
-const sweetspots = await FileAttachment("data/sweetspot_top10.web.geojson").json();
-const top10hubs = await FileAttachment("data/top10_hubs.web.csv").csv({typed: true});
+const sweetspots = await FileAttachment("data/sweetspot_top10_v2.web.geojson").json();
+const top10cedis = await FileAttachment("data/top10_cedis.web.csv").csv({typed: true});
+
+// Normalizar datos para compatibilidad
+const top400 = {
+  type: "FeatureCollection",
+  features: establecimientos.features.map(f => {
+    // Parsear decil correctamente (D1-D10 -> 1-10, o usar el valor numérico si existe)
+    let decilValue = 5;
+    if (f.properties.decil != null) {
+      decilValue = Number(f.properties.decil);
+    } else if (f.properties.decil_prioridad) {
+      const match = String(f.properties.decil_prioridad).match(/\d+/);
+      decilValue = match ? parseInt(match[0], 10) : 5;
+    }
+    
+    return {
+      ...f,
+      properties: {
+        ...f.properties,
+        nom_estab: f.properties.nom_estab || f.properties.nombre_establecimiento || "Sin nombre",
+        score_electrolit: f.properties.score_electrolit || f.properties.score_total || 0,
+        decil: decilValue,
+        colonia: f.properties.colonia || f.properties.nomb_asent || "N/A",
+        direccion: f.properties.direccion || [f.properties.tipo_vial, f.properties.nom_vial, f.properties.numero_ext].filter(Boolean).join(" ") || "N/A",
+        segmento: f.properties.segmento || "retail"
+      }
+    };
+  })
+};
 ```
 
 ```js
@@ -40,38 +68,39 @@ display(decisionCallout({
 ## Filtros Dinámicos
 
 ```js
-// Inputs de filtrado
+// Preparar opciones de filtrado
 const segmentos = ["Todos", ...new Set(top400.features.map(f => f.properties.segmento).filter(Boolean))];
-viewof segmentoSeleccionado = Inputs.select(segmentos, {
+const colonias = ["Todas", ...[...new Set(top400.features.map(f => f.properties.colonia).filter(Boolean))].sort()];
+```
+
+```js
+const segmentoSeleccionado = view(Inputs.select(segmentos, {
   label: "Segmento de Negocio",
   value: "Todos"
-});
+}));
 ```
 
 ```js
-viewof decilMinimo = Inputs.range([1, 10], {
+const decilMinimo = view(Inputs.range([1, 10], {
   label: "Decil Mínimo (1=bajo, 10=alto)",
-  value: 7,
+  value: 1,
   step: 1
-});
+}));
 ```
 
 ```js
-viewof scoreMinimo = Inputs.range([0, 100], {
+const scoreMinimo = view(Inputs.range([0, 100], {
   label: "Score Mínimo",
-  value: 60,
+  value: 0,
   step: 5
-});
+}));
 ```
 
 ```js
-// Colonias disponibles
-const colonias = ["Todas", ...new Set(top400.features.map(f => f.properties.colonia).filter(Boolean)).sort()];
-viewof coloniaSeleccionada = Inputs.search(colonias, {
+const coloniaSeleccionada = view(Inputs.select(colonias, {
   label: "Buscar por Colonia",
-  placeholder: "Escribe para filtrar...",
   value: "Todas"
-});
+}));
 ```
 
 ---
@@ -79,27 +108,31 @@ viewof coloniaSeleccionada = Inputs.search(colonias, {
 ## Resultados Filtrados
 
 ```js
-// Aplicar filtros
+// Aplicar filtros - usando valores normalizados
 const establecimientosFiltrados = top400.features.filter(f => {
   const props = f.properties;
+  const decil = props.decil || 0;
+  const score = props.score_electrolit || 0;
+  const segmento = props.segmento || "retail";
+  const colonia = props.colonia || "";
   
   // Filtro por segmento
-  if (segmentoSeleccionado !== "Todos" && props.segmento !== segmentoSeleccionado) {
+  if (segmentoSeleccionado && segmentoSeleccionado !== "Todos" && segmento !== segmentoSeleccionado) {
     return false;
   }
   
-  // Filtro por decil
-  if (props.decil < decilMinimo) {
+  // Filtro por decil (1-10)
+  if (decil < decilMinimo) {
     return false;
   }
   
-  // Filtro por score
-  if ((props.score_electrolit || 0) < scoreMinimo) {
+  // Filtro por score (0-100)
+  if (score < scoreMinimo) {
     return false;
   }
   
   // Filtro por colonia
-  if (coloniaSeleccionada !== "Todas" && props.colonia !== coloniaSeleccionada) {
+  if (coloniaSeleccionada && coloniaSeleccionada !== "Todas" && colonia !== coloniaSeleccionada) {
     return false;
   }
   
@@ -264,30 +297,63 @@ const tablaData = establecimientosFiltrados
   }))
   .sort((a, b) => (b.score_electrolit || 0) - (a.score_electrolit || 0));
 
-display(html`
-  <div class="card">
-    <h3>Establecimientos Seleccionados (${formatNumber(totalFiltrados)})</h3>
-    <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
-      Tabla ordenable y exportable a CSV. Usa el botón "Exportar CSV" para descargar la lista completa con coordenadas.
-    </p>
-    ${table(
+// Helper functions para crear elementos DOM (evita HTML strings)
+function createSegmentoBadge(v) {
+  const colors = {retail: "#1565c0", horeca: "#e65100", institucional: "#6a1b9a"};
+  const bg = {retail: "#e3f2fd", horeca: "#fff3e0", institucional: "#f3e5f5"};
+  const span = document.createElement("span");
+  span.style.cssText = `background: ${bg[v] || '#f5f5f5'}; color: ${colors[v] || '#666'}; padding: 3px 8px; border-radius: 10px; font-size: 0.8rem; font-weight: 600;`;
+  span.textContent = v || "N/A";
+  return span;
+}
+
+function createScoreBadge(v) {
+  const strong = document.createElement("strong");
+  strong.textContent = v != null && !isNaN(v) ? Number(v).toFixed(1) : "N/A";
+  return strong;
+}
+
+function createDecilBadge(v) {
+  const span = document.createElement("span");
+  span.style.cssText = "background: #e8eaf6; color: #3f51b5; padding: 3px 7px; border-radius: 6px; font-weight: 600;";
+  span.textContent = v || "N/A";
+  return span;
+}
+
+function createDireccionText(v) {
+  const span = document.createElement("span");
+  span.style.cssText = "font-size: 0.85rem; color: #666;";
+  span.textContent = v || "N/A";
+  return span;
+}
+
+// Crear card contenedor
+const tablaCard = document.createElement("div");
+tablaCard.className = "card";
+
+const h3Tabla = document.createElement("h3");
+h3Tabla.textContent = `Establecimientos Seleccionados (${formatNumber(totalFiltrados)})`;
+tablaCard.appendChild(h3Tabla);
+
+const pDesc = document.createElement("p");
+pDesc.style.cssText = "color: #666; font-size: 0.9rem; margin-bottom: 1rem;";
+pDesc.textContent = "Tabla ordenable y exportable a CSV. Usa el botón \"Exportar CSV\" para descargar la lista completa con coordenadas.";
+tablaCard.appendChild(pDesc);
+
+tablaCard.appendChild(table(
       tablaData,
       [
         {key: "nom_estab", label: "Establecimiento"},
-        {key: "segmento", label: "Segmento", format: (v) => {
-          const colors = {retail: "#1565c0", horeca: "#e65100", institucional: "#6a1b9a"};
-          const bg = {retail: "#e3f2fd", horeca: "#fff3e0", institucional: "#f3e5f5"};
-          return `<span style="background: ${bg[v] || '#f5f5f5'}; color: ${colors[v] || '#666'}; padding: 3px 8px; border-radius: 10px; font-size: 0.8rem; font-weight: 600;">${v || 'N/A'}</span>`;
-        }},
-        {key: "score_electrolit", label: "Score", format: (v) => v != null ? `<strong>${v.toFixed(1)}</strong>` : "N/A"},
-        {key: "decil", label: "Decil", format: (v) => `<span style="background: #e8eaf6; color: #3f51b5; padding: 3px 7px; border-radius: 6px; font-weight: 600;">${v || 'N/A'}</span>`},
+    {key: "segmento", label: "Segmento", format: v => createSegmentoBadge(v)},
+    {key: "score_electrolit", label: "Score", format: v => createScoreBadge(v)},
+    {key: "decil", label: "Decil", format: v => createDecilBadge(v)},
         {key: "colonia", label: "Colonia"},
-        {key: "direccion", label: "Dirección", format: (v) => `<span style="font-size: 0.85rem; color: #666;">${v}</span>`}
+    {key: "direccion", label: "Dirección", format: v => createDireccionText(v)}
       ],
       {sortable: true, exportable: true, pageSize: 50}
-    )}
-  </div>
-`);
+));
+
+display(tablaCard);
 ```
 
 ---
@@ -306,37 +372,58 @@ if (totalFiltrados > 0) {
     }))
     .sort((a, b) => b.cantidad - a.cantidad);
   
-  display(html`
-    <div class="card">
-      <h3>Composición por Segmento</h3>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1rem;">
-        ${segmentosArray.map(s => `
-          <div style="
-            background: linear-gradient(135deg, ${s.segmento === 'retail' ? '#e3f2fd' : s.segmento === 'horeca' ? '#fff3e0' : '#f3e5f5'} 0%, white 100%);
-            padding: 1.5rem;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-            text-align: center;
-          ">
-            <div style="font-size: 2rem; font-weight: 700; color: ${s.segmento === 'retail' ? '#1565c0' : s.segmento === 'horeca' ? '#e65100' : '#6a1b9a'}; margin-bottom: 0.5rem;">
-              ${formatNumber(s.cantidad)}
-            </div>
-            <div style="font-weight: 600; text-transform: capitalize; margin-bottom: 0.25rem;">${s.segmento}</div>
-            <div style="font-size: 0.9rem; color: #666;">${s.porcentaje.toFixed(1)}% del total</div>
-          </div>
-        `).join('')}
-      </div>
-    </div>
-  `);
+  // Crear card con DOM elements
+  const cardSegmentos = document.createElement("div");
+  cardSegmentos.className = "card";
+  
+  const h3Seg = document.createElement("h3");
+  h3Seg.textContent = "Composición por Segmento";
+  cardSegmentos.appendChild(h3Seg);
+  
+  const gridSegmentos = document.createElement("div");
+  gridSegmentos.style.cssText = "display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1rem;";
+  
+  for (const s of segmentosArray) {
+    const bgColor = s.segmento === 'retail' ? '#e3f2fd' : s.segmento === 'horeca' ? '#fff3e0' : '#f3e5f5';
+    const textColor = s.segmento === 'retail' ? '#1565c0' : s.segmento === 'horeca' ? '#e65100' : '#6a1b9a';
+    
+    const segCard = document.createElement("div");
+    segCard.style.cssText = `background: linear-gradient(135deg, ${bgColor} 0%, white 100%); padding: 1.5rem; border-radius: 8px; border: 1px solid #e0e0e0; text-align: center;`;
+    
+    const cantidadDiv = document.createElement("div");
+    cantidadDiv.style.cssText = `font-size: 2rem; font-weight: 700; color: ${textColor}; margin-bottom: 0.5rem;`;
+    cantidadDiv.textContent = formatNumber(s.cantidad);
+    
+    const nombreDiv = document.createElement("div");
+    nombreDiv.style.cssText = "font-weight: 600; text-transform: capitalize; margin-bottom: 0.25rem;";
+    nombreDiv.textContent = s.segmento;
+    
+    const pctDiv = document.createElement("div");
+    pctDiv.style.cssText = "font-size: 0.9rem; color: #666;";
+    pctDiv.textContent = `${s.porcentaje.toFixed(1)}% del total`;
+    
+    segCard.append(cantidadDiv, nombreDiv, pctDiv);
+    gridSegmentos.appendChild(segCard);
+  }
+  
+  cardSegmentos.appendChild(gridSegmentos);
+  display(cardSegmentos);
+  
 } else {
-  display(html`
-    <div class="card" style="background: #fff3e0; border-left: 4px solid #ff9800;">
-      <p style="margin: 0; font-weight: 600; color: #e65100;">⚠️ No hay resultados con los filtros actuales</p>
-      <p style="margin: 0.5rem 0 0 0; color: #666;">
-        Ajusta los valores de decil mínimo o score mínimo para ver más establecimientos.
-      </p>
-    </div>
-  `);
+  const warningCard = document.createElement("div");
+  warningCard.className = "card";
+  warningCard.style.cssText = "background: #fff3e0; border-left: 4px solid #ff9800;";
+  
+  const p1 = document.createElement("p");
+  p1.style.cssText = "margin: 0; font-weight: 600; color: #e65100;";
+  p1.textContent = "⚠️ No hay resultados con los filtros actuales";
+  
+  const p2 = document.createElement("p");
+  p2.style.cssText = "margin: 0.5rem 0 0 0; color: #666;";
+  p2.textContent = "Ajusta los valores de decil mínimo o score mínimo para ver más establecimientos.";
+  
+  warningCard.append(p1, p2);
+  display(warningCard);
 }
 ```
 
@@ -397,31 +484,59 @@ const casosDeUso = [
   }
 ];
 
-display(html`
-  <div class="card">
-    <h3>Casos de Uso por Fase de Implementación</h3>
-    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-      <thead>
-        <tr style="background: #f5f5f5; text-align: left;">
-          <th style="padding: 10px; border: 1px solid #ddd;">Caso de Uso</th>
-          <th style="padding: 10px; border: 1px solid #ddd;">Filtros Sugeridos</th>
-          <th style="padding: 10px; border: 1px solid #ddd;">Razón Estratégica</th>
-          <th style="padding: 10px; border: 1px solid #ddd;">Acción</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${casosDeUso.map(c => `
-          <tr style="border: 1px solid #ddd;">
-            <td style="padding: 10px; font-weight: 600;">${c.caso}</td>
-            <td style="padding: 10px; font-family: monospace; font-size: 0.85rem; background: #f9f9f9;">${c.filtros}</td>
-            <td style="padding: 10px; color: #666;">${c.razon}</td>
-            <td style="padding: 10px; font-style: italic;">${c.accion}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-  </div>
-`);
+// Crear tabla con DOM elements
+const cardCasos = document.createElement("div");
+cardCasos.className = "card";
+
+const h3Casos = document.createElement("h3");
+h3Casos.textContent = "Casos de Uso por Fase de Implementación";
+cardCasos.appendChild(h3Casos);
+
+const tablaCasos = document.createElement("table");
+tablaCasos.style.cssText = "width: 100%; border-collapse: collapse; font-size: 0.9rem;";
+
+// Header
+const thead = document.createElement("thead");
+const headerRow = document.createElement("tr");
+headerRow.style.cssText = "background: #f5f5f5; text-align: left;";
+["Caso de Uso", "Filtros Sugeridos", "Razón Estratégica", "Acción"].forEach(label => {
+  const th = document.createElement("th");
+  th.style.cssText = "padding: 10px; border: 1px solid #ddd;";
+  th.textContent = label;
+  headerRow.appendChild(th);
+});
+thead.appendChild(headerRow);
+tablaCasos.appendChild(thead);
+
+// Body
+const tbody = document.createElement("tbody");
+for (const c of casosDeUso) {
+  const tr = document.createElement("tr");
+  tr.style.cssText = "border: 1px solid #ddd;";
+  
+  const tdCaso = document.createElement("td");
+  tdCaso.style.cssText = "padding: 10px; font-weight: 600;";
+  tdCaso.textContent = c.caso;
+  
+  const tdFiltros = document.createElement("td");
+  tdFiltros.style.cssText = "padding: 10px; font-family: monospace; font-size: 0.85rem; background: #f9f9f9;";
+  tdFiltros.textContent = c.filtros;
+  
+  const tdRazon = document.createElement("td");
+  tdRazon.style.cssText = "padding: 10px; color: #666;";
+  tdRazon.textContent = c.razon;
+  
+  const tdAccion = document.createElement("td");
+  tdAccion.style.cssText = "padding: 10px; font-style: italic;";
+  tdAccion.textContent = c.accion;
+  
+  tr.append(tdCaso, tdFiltros, tdRazon, tdAccion);
+  tbody.appendChild(tr);
+}
+tablaCasos.appendChild(tbody);
+cardCasos.appendChild(tablaCasos);
+
+display(cardCasos);
 ```
 
 ---
