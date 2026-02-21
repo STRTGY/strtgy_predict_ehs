@@ -25,6 +25,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Ensure agebs_base.web.geojson for build
+        run: |
+          if [ ! -f src/data/agebs_base.web.geojson ] && [ -f src/data/agebs_scored.web.geojson ]; then
+            cp src/data/agebs_scored.web.geojson src/data/agebs_base.web.geojson
+          fi
       - run: npm run build
       - uses: actions/configure-pages@v4
       - uses: actions/upload-pages-artifact@v3
