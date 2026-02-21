@@ -35,7 +35,6 @@ __pycache__/
 .cache/
 .temp/
 
-# Large GeoJSON assets (exceed GitHub limits; keep locally or obtain separately)
-src/data/agebs_base.web.geojson
+# Large H3 GeoJSON assets (exceed GitHub limits; keep locally or obtain via Step 05b)
 src/data/layers/h3/h3_res9.geojson
 src/data/layers/h3/h3_res10.geojson

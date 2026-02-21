@@ -16,7 +16,7 @@ python scripts/sync_data_to_observable.py
 
 ## Large assets not in Git
 
-The following files exceed GitHub's file size limits and are listed in `.gitignore`. They are not in the repository. For local development, obtain them from your pipeline output (Step 05 / 05b) or from internal storage: `agebs_base.web.geojson`, `src/data/layers/h3/h3_res9.geojson`, `src/data/layers/h3/h3_res10.geojson`.
+The H3 layer files `src/data/layers/h3/h3_res9.geojson` and `h3_res10.geojson` exceed GitHub's file size limits and are in `.gitignore`. Obtain them from pipeline Step 05b or internal storage if needed locally.
 
 ## Pipeline data incorporation
 
