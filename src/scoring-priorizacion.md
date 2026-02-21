@@ -8,28 +8,32 @@ import {sectionHeader, decisionCallout, implicationsCallout, roiMetric} from "./
 import {kpi, formatNumber, formatPercent, table} from "./components/ui.js";
 import {createBaseMap, addGeoJsonLayer, styleByScore, getColorForScore, createLegend, fitBounds, createEstablishmentPopup, L} from "./components/maps.js";
 
-// Cargar datos
-const establecimientos = await FileAttachment("data/establecimientos_scored.web.geojson").json();
+// Cargar datos: métricas (universo priorizado) y Top 400 desde src/data
+const metricsData = await FileAttachment("data/metrics.json").json();
+const top400Raw = await FileAttachment("data/top400.web.geojson").json();
 const agebs = await FileAttachment("data/agebs_base.web.geojson").json();
 
-// Normalizar datos para compatibilidad
+const totalPriorizados = metricsData?.metrics?.total_establishments ?? metricsData?.total_establecimientos ?? 4240;
+const totalTop400 = top400Raw?.features?.length ?? 400;
+
+// Normalizar top400 para compatibilidad con componentes (score_electrolit, decil, segmento)
 const top400 = {
   type: "FeatureCollection",
-  features: establecimientos.features.slice(0, 500).map(f => ({
+  features: (top400Raw.features || []).map(f => ({
     ...f,
     properties: {
       ...f.properties,
-      nom_estab: f.properties.nombre_establecimiento,
+      nom_estab: f.properties.nom_estab ?? f.properties.nombre,
       score_electrolit: f.properties.score_total,
-      decil: parseInt((f.properties.decil_prioridad || "D5").replace("D", "")) || 5,
-      colonia: f.properties.nomb_asent,
-      direccion: [f.properties.tipo_vial, f.properties.nom_vial, f.properties.numero_ext].filter(Boolean).join(" "),
+      decil: parseInt((f.properties.decil_prioridad || "D5").replace("D", ""), 10) || 5,
+      colonia: f.properties.nomb_asent ?? "",
+      direccion: [f.properties.tipo_vial, f.properties.nom_vial, f.properties.numero_ext].filter(Boolean).join(" ") || "",
       segmento: f.properties.es_farmacia ? "retail" : (f.properties.es_retail_moderno ? "retail" : "retail")
     }
   }))
 };
 
-// Top 20 comercial (ordenados por score)
+// Top 20 comercial (ordenados por score), desde datos
 const top20comercial = top400.features
   .map(f => ({...f.properties, ranking: 0}))
   .sort((a, b) => (b.score_electrolit || 0) - (a.score_electrolit || 0))
@@ -40,8 +44,7 @@ const top20comercial = top400.features
 ```js
 display(sectionHeader({
   title: "Scoring y Priorización de Establecimientos",
-  subtitle: "Modelo multi-criterio para identificar los 400 establecimientos B2B de mayor potencial",
-  certainty: "high"
+  subtitle: `Modelo multi-criterio para identificar los ${formatNumber(totalTop400)} establecimientos B2B de mayor potencial (de ${formatNumber(totalPriorizados)} establecimientos prioritarios evaluados).`
 }));
 ```
 
@@ -226,6 +229,8 @@ display(createFormulaCard());
 
 ### Métricas Globales
 
+Las siguientes métricas se calculan **solo sobre el Top 400** (los 400 establecimientos de mayor score del universo de **4,240** evaluados). Por eso el promedio y la mediana son altos y el rango es estrecho (94–100): se está describiendo la cola superior, no la distribución del universo completo.
+
 ```js
 const scores = top400.features.map(f => f.properties.score_electrolit).filter(s => s != null && !isNaN(s));
 const hasScores = scores.length > 0;
@@ -236,17 +241,16 @@ const scoreMin = hasScores ? Math.min(...scores) : 0;
 const scoreMax = hasScores ? Math.max(...scores) : 0;
 
 const top10pct = scores.filter(s => s >= 90).length;
-const top25pct = scores.filter(s => s >= 75).length;
 
 display(
   kpi([
     {
-      label: "Score Promedio",
+      label: "Score Promedio (Top 400)",
       value: scorePromedio.toFixed(1),
       format: null
     },
     {
-      label: "Score Mediana",
+      label: "Score Mediana (Top 400)",
       value: scoreMediana.toFixed(1),
       format: null
     },
@@ -256,7 +260,7 @@ display(
       format: null
     },
     {
-      label: "Top 10% (Score ≥90)",
+      label: "Con score ≥90 (en Top 400)",
       value: formatNumber(top10pct),
       format: null
     }
@@ -496,120 +500,14 @@ display(createSegmentosTable());
 
 ---
 
-## 5.6. ROI Estimado por Decil
-
-### Proyección de Conversión y Volumen
-
-```js
-const decilesROI = [
-  {decil: 10, conversion: 65, ticket_promedio: 5500, frecuencia_mes: 2.0, establecimientos: 40},
-  {decil: 9, conversion: 55, ticket_promedio: 5000, frecuencia_mes: 1.8, establecimientos: 40},
-  {decil: 8, conversion: 45, ticket_promedio: 4500, frecuencia_mes: 1.6, establecimientos: 40},
-  {decil: 7, conversion: 35, ticket_promedio: 4000, frecuencia_mes: 1.4, establecimientos: 40},
-  {decil: 6, conversion: 28, ticket_promedio: 3500, frecuencia_mes: 1.2, establecimientos: 40},
-  {decil: 5, conversion: 22, ticket_promedio: 3000, frecuencia_mes: 1.0, establecimientos: 40},
-  {decil: 4, conversion: 18, ticket_promedio: 2800, frecuencia_mes: 0.9, establecimientos: 40},
-  {decil: 3, conversion: 14, ticket_promedio: 2500, frecuencia_mes: 0.8, establecimientos: 40},
-  {decil: 2, conversion: 10, ticket_promedio: 2200, frecuencia_mes: 0.7, establecimientos: 40},
-  {decil: 1, conversion: 7, ticket_promedio: 2000, frecuencia_mes: 0.6, establecimientos: 40}
-];
-
-const decilesConROI = decilesROI.map(d => {
-  const clientesEsperados = d.establecimientos * (d.conversion / 100);
-  const ventaMensual = clientesEsperados * d.ticket_promedio * d.frecuencia_mes;
-  const ventaAnual = ventaMensual * 12;
-  return {...d, clientesEsperados, ventaMensual, ventaAnual};
-});
-
-const totalVentaAnualProyectada = decilesConROI.reduce((sum, d) => sum + d.ventaAnual, 0);
-const top3DecilesVenta = decilesConROI.slice(0, 3).reduce((sum, d) => sum + d.ventaAnual, 0);
-const pctTop3 = ((top3DecilesVenta / totalVentaAnualProyectada) * 100).toFixed(0);
-
-// Crear tabla de ROI con DOM
-function createROITable() {
-  const card = document.createElement("div");
-  card.className = "card";
-  
-  const h3 = document.createElement("h3");
-  h3.textContent = "Proyección de ROI por Decil";
-  card.appendChild(h3);
-  
-  const desc = document.createElement("p");
-  desc.style.cssText = "color: #666; font-size: 0.9rem; margin-bottom: 1rem;";
-  desc.innerHTML = `Basado en benchmarks de industria: tasa de conversión, ticket promedio y frecuencia de compra. 
-    <strong>Los deciles 9–10 generan ${pctTop3}% de la venta proyectada.</strong>`;
-  card.appendChild(desc);
-  
-  const table = document.createElement("table");
-  table.style.cssText = "width: 100%; border-collapse: collapse; font-size: 0.9rem;";
-  
-  const thead = document.createElement("thead");
-  thead.innerHTML = `
-    <tr style="background: #f5f5f5;">
-      <th style="padding: 10px; text-align: center;">Decil</th>
-      <th style="padding: 10px; text-align: center;">Establecimientos</th>
-      <th style="padding: 10px; text-align: center;">Conversión (%)</th>
-      <th style="padding: 10px; text-align: center;">Clientes Esperados</th>
-      <th style="padding: 10px; text-align: center;">Ticket Promedio</th>
-      <th style="padding: 10px; text-align: center;">Venta Mensual</th>
-      <th style="padding: 10px; text-align: center;">Venta Anual</th>
-    </tr>
-  `;
-  table.appendChild(thead);
-  
-  const tbody = document.createElement("tbody");
-  
-  for (const d of decilesConROI) {
-    const tr = document.createElement("tr");
-    tr.style.borderTop = "1px solid #ddd";
-    if (d.decil >= 9) tr.style.background = "#e8f5e9";
-    
-    tr.innerHTML = `
-      <td style="padding: 10px; text-align: center; font-weight: 700; color: #3f51b5;">${d.decil}</td>
-      <td style="padding: 10px; text-align: center;">${d.establecimientos}</td>
-      <td style="padding: 10px; text-align: center; color: ${d.conversion >= 50 ? '#2e7d32' : '#666'};">${d.conversion}%</td>
-      <td style="padding: 10px; text-align: center; font-weight: 600;">${d.clientesEsperados.toFixed(0)}</td>
-      <td style="padding: 10px; text-align: center;">$${formatNumber(d.ticket_promedio)}</td>
-      <td style="padding: 10px; text-align: center; font-weight: 600; color: #1565c0;">$${formatNumber(Math.round(d.ventaMensual))}</td>
-      <td style="padding: 10px; text-align: center; font-weight: 700; font-size: 1.05rem; color: #1565c0;">$${formatNumber(Math.round(d.ventaAnual))}</td>
-    `;
-    tbody.appendChild(tr);
-  }
-  
-  // Total row
-  const totalRow = document.createElement("tr");
-  totalRow.style.cssText = "background: #1565c0; color: white; font-weight: 700;";
-  totalRow.innerHTML = `
-    <td colspan="5" style="padding: 10px; text-align: right;">TOTAL PROYECTADO (Año 1)</td>
-    <td style="padding: 10px; text-align: center;">—</td>
-    <td style="padding: 10px; text-align: center; font-size: 1.2rem;">$${formatNumber(Math.round(totalVentaAnualProyectada))}</td>
-  `;
-  tbody.appendChild(totalRow);
-  
-  table.appendChild(tbody);
-  card.appendChild(table);
-  
-  const note = document.createElement("p");
-  note.style.cssText = "margin-top: 1rem; font-size: 0.85rem; color: #999; font-style: italic;";
-  note.textContent = "*Proyección basada en supuestos conservadores. Validar con piloto de campo en deciles 9–10 antes de escalar.";
-  card.appendChild(note);
-  
-  return card;
-}
-
-display(createROITable());
-```
-
----
-
 ```js
 display(implicationsCallout({
   title: "Implicaciones y Acciones Inmediatas",
   items: [
-    `**Foco en top 80 (deciles 9–10):** Estos establecimientos representan ${formatPercent(top3DecilesVenta / totalVentaAnualProyectada, 0)} del potencial de venta. Asignar equipo senior exclusivamente aquí.`,
-    "**Piloto de validación:** Prospectar 50 establecimientos del decil 10 en primera fase. Medir conversión real vs. proyectada (65% esperado).",
-    "**Ajuste dinámico:** Si conversión real < 50% en decil 10, revisar ponderadores del modelo (posiblemente sobrevalorando población o NSE).",
-    `**ROI claro:** Con una inversión estimada de $200K MXN en 6 meses (equipo + logística), el payback es <8 meses si se alcanza 60% del potencial proyectado ($${formatNumber(Math.round(totalVentaAnualProyectada * 0.6))} anuales).`
+    "**Foco en deciles 9–10:** Asignar equipo senior a los establecimientos de mayor score. Priorizar prospección en el Top 400.",
+    "**Piloto de validación:** Prospectar una muestra del decil 10 en primera fase y medir conversión real vs. esperada.",
+    "**Ajuste dinámico:** Si la conversión real en decil 10 es menor a lo esperado, revisar ponderadores del modelo (población, NSE, etc.).",
+    "**Secuencia territorial:** Atacar AGEBs con mayor concentración de establecimientos en deciles altos para maximizar eficiencia de ruta."
   ]
 }));
 ```
@@ -620,10 +518,10 @@ display(implicationsCallout({
 
 - **[Dashboard Interactivo](./dashboard)** — Explora, filtra y exporta listas priorizadas
 - **[Logística y Sonora](./logistica-sonora)** — Ubicación óptima de CEDIS para servir estos establecimientos
-- **[Descargas](./descargas)** — Exporta CSV/GeoJSON para CRM o herramientas de ruteo
+- **Exportación de datos:** escríbenos a [hola@strtgy.ai](mailto:hola@strtgy.ai) para acceso a listas priorizadas (CSV/GeoJSON) para CRM o herramientas de ruteo
 
 ---
 
 <small style="color: #999;">
-  **Sección:** 5 de 7 | **Anterior:** <a href="./analisis-comercial">4) Análisis Comercial</a> | **Siguiente:** <a href="./logistica-sonora">6) Logística y Sonora</a>
+  <strong>Sección:</strong> 5 de 7 | <strong>Anterior:</strong> <a href="./analisis-comercial">4) Análisis Comercial</a> | <strong>Siguiente:</strong> <a href="./logistica-sonora">6) Logística y Sonora</a>
 </small>

@@ -234,43 +234,11 @@ export function roiMetric({
 }
 
 /**
- * Certainty badge - para indicar nivel de confianza
- */
-export function certaintyBadge(level) {
-  const badge = document.createElement("span");
-  badge.style.cssText = `
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    margin-left: 0.5rem;
-  `;
-
-  if (level === "high") {
-    badge.textContent = "Alta certeza";
-    badge.style.background = "#c8e6c9";
-    badge.style.color = "#2e7d32";
-  } else if (level === "medium") {
-    badge.textContent = "Certeza media";
-    badge.style.background = "#fff9c4";
-    badge.style.color = "#f57f17";
-  } else {
-    badge.textContent = "Validar";
-    badge.style.background = "#ffccbc";
-    badge.style.color = "#d84315";
-  }
-
-  return badge;
-}
-
-/**
  * Section header con estilo STRTGY
  */
 export function sectionHeader({
   title,
-  subtitle,
-  certainty
+  subtitle
 }) {
   const header = document.createElement("div");
   header.style.cssText = "margin: 3rem 0 1.5rem 0; padding-bottom: 1rem; border-bottom: 2px solid #e0e0e0;";
@@ -282,10 +250,6 @@ export function sectionHeader({
   h2.textContent = title;
   h2.style.cssText = "margin: 0; font-size: 1.75rem; font-weight: 600;";
   titleLine.appendChild(h2);
-
-  if (certainty) {
-    titleLine.appendChild(certaintyBadge(certainty));
-  }
 
   header.appendChild(titleLine);
 

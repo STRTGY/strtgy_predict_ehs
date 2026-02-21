@@ -4,15 +4,14 @@ toc: true
 ---
 
 ```js
-import {sectionHeader, decisionCallout, implicationsCallout, certaintyBadge} from "./components/brand.js";
+import {sectionHeader, decisionCallout, implicationsCallout} from "./components/brand.js";
 import {kpi, formatNumber} from "./components/ui.js";
 ```
 
 ```js
 display(sectionHeader({
   title: "Contexto y Objetivos del Proyecto",
-  subtitle: "Marco estratégico para la expansión comercial B2B de Electrolit en Hermosillo, Sonora",
-  certainty: "high"
+  subtitle: "Marco estratégico para la expansión comercial B2B de Electrolit en Hermosillo, Sonora"
 }));
 ```
 
@@ -48,12 +47,12 @@ El **mercado objetivo** (población metropolitana: ~900,000 habitantes) presenta
 
 Sin embargo, la expansión enfrenta **complejidad de decisión**:
 
-1. **Más de 10,000 establecimientos potenciales** en Hermosillo (tiendas de abarrotes, restaurantes, hoteles, gimnasios, farmacias, etc.)
+1. **Más de 38,000 establecimientos potenciales** en Hermosillo (tiendas de abarrotes, restaurantes, hoteles, gimnasios, farmacias, etc.)
 2. **Recursos comerciales limitados**: equipo de ventas reducido requiere priorización quirúrgica
 3. **Costos logísticos sensibles**: distribución capilar en territorio extenso afecta márgenes
 4. **Información dispersa**: datos de mercado fragmentados en múltiples fuentes (INEGI, directorios, bases propias)
 
-**¿Cómo identificar los 400–600 establecimientos con mayor potencial de conversión y volumen?**  
+**¿Cómo identificar los 400 establecimientos de mayor potencial (de 4,240 evaluados) para conversión y volumen?**  
 **¿Dónde ubicar infraestructura logística (CEDIS) para minimizar costos de distribución?**
 
 ---
@@ -71,42 +70,37 @@ const objetivos = [
   {
     id: "OBJ-01",
     objetivo: "Base de Datos Priorizada",
-    meta: "Generar listado de 400–600 establecimientos B2B georreferenciados con score multi-criterio",
+    meta: "Generar listado de 400 establecimientos B2B de mayor potencial (de 4,240 evaluados) georreferenciados con score multi-criterio",
     metrica: "# de establecimientos con score ≥ 60/100",
-    entregable: "Archivo GeoJSON + CSV exportable con ranking",
-    certeza: "high"
+    entregable: "Archivo GeoJSON + CSV exportable con ranking"
   },
   {
     id: "OBJ-02",
     objetivo: "Modelo de Scoring Transparente",
     meta: "Diseñar algoritmo de priorización basado en: densidad poblacional, perfil socioeconómico, densidad comercial, accesibilidad",
     metrica: "Correlación del score con conversión real (validación posterior)",
-    entregable: "Documentación de ponderadores y lógica de scoring",
-    certeza: "high"
+    entregable: "Documentación de ponderadores y lógica de scoring"
   },
   {
     id: "OBJ-03",
     objetivo: "Ubicación Óptima de CEDIS",
     meta: "Identificar top 10 ubicaciones para centro de distribución que minimicen tiempo promedio de entrega",
     metrica: "Cobertura de ≥80% de establecimientos priorizados en <30 min",
-    entregable: "Ranking de ubicaciones con análisis de cobertura",
-    certeza: "medium"
+    entregable: "Ranking de ubicaciones con análisis de cobertura"
   },
   {
     id: "OBJ-04",
     objetivo: "Estrategia de Expansión Sonora",
-    meta: "Evaluar viabilidad de cobertura regional (Cajeme, Nogales, Guaymas, Navojoa) desde Hermosillo",
+    meta: "Evaluar cobertura regional (Cajeme, Nogales, Guaymas, Navojoa) desde Hermosillo",
     metrica: "ROI logístico comparado (hub único vs. hubs regionales)",
-    entregable: "Análisis de escenarios con recomendación",
-    certeza: "medium"
+    entregable: "Análisis de escenarios con recomendación"
   },
   {
     id: "OBJ-05",
     objetivo: "Dashboard Interactivo",
     meta: "Desarrollar interfaz web para exploración de datos, filtrado por segmento/zona y exportación de listas",
     metrica: "Usabilidad validada con equipo comercial",
-    entregable: "Sitio Observable Framework desplegado",
-    certeza: "high"
+    entregable: "Sitio Observable Framework desplegado"
   }
 ];
 
@@ -124,7 +118,7 @@ const headerRow = document.createElement("tr");
 headerRow.style.background = "#f5f5f5";
 headerRow.style.textAlign = "left";
 
-["ID", "Objetivo", "Meta", "Métrica de Éxito", "Entregable", "Certeza"].forEach(headerText => {
+["ID", "Objetivo", "Meta", "Métrica de Éxito", "Entregable"].forEach(headerText => {
   const th = document.createElement("th");
   th.style.padding = "10px";
   th.style.border = "1px solid #ddd";
@@ -176,28 +170,6 @@ objetivos.forEach(obj => {
   entregableCell.style.fontStyle = "italic";
   entregableCell.textContent = obj.entregable;
   row.appendChild(entregableCell);
-  
-  // Certeza cell
-  const certezaCell = document.createElement("td");
-  certezaCell.style.padding = "10px";
-  certezaCell.style.textAlign = "center";
-  
-  const certezaBadge = document.createElement("span");
-  if (obj.certeza === 'high') {
-    certezaBadge.style.background = "#c8e6c9";
-    certezaBadge.style.color = "#2e7d32";
-    certezaBadge.textContent = "Alta";
-  } else {
-    certezaBadge.style.background = "#fff9c4";
-    certezaBadge.style.color = "#f57f17";
-    certezaBadge.textContent = "Media";
-  }
-  certezaBadge.style.padding = "4px 8px";
-  certezaBadge.style.borderRadius = "12px";
-  certezaBadge.style.fontSize = "0.8rem";
-  
-  certezaCell.appendChild(certezaBadge);
-  row.appendChild(certezaCell);
   
   tbody.appendChild(row);
 });
@@ -266,31 +238,7 @@ Nuestro enfoque se basa en hipótesis validables que conectan variables geoestad
 
 ---
 
-## 1.4. Restricciones y Limitaciones
-
-### Restricciones Operativas
-
-- **Presupuesto limitado para CEDIS:** Inversión inicial en infraestructura logística debe justificarse con cobertura de ≥70% del mercado priorizado
-- **Equipo comercial reducido:** 5–8 vendedores disponibles para prospección, requieren listas priorizadas para optimizar rutas
-- **Frecuencia de entrega:** Modelo de distribución 2–3 veces por semana (no diario) en canal tradicional
-- **Tamaño de pedido mínimo:** Establecimientos deben tener capacidad de compra ≥$2,000 MXN/pedido para rentabilidad
-
-### Limitaciones de Datos
-
-- **DENUE 2024:** Directorio INEGI actualizado pero con ~15% de registros desactualizados o cerrados (validación de campo requerida)
-- **SCINCE 2020:** Datos demográficos del último censo (4 años de antigüedad); estimaciones de crecimiento poblacional aplicadas
-- **Sin datos de ventas propias:** No hay histórico de Electrolit en Hermosillo para validación cuantitativa del modelo
-- **Competencia:** Información limitada sobre presencia de competidores (Gatorade, Powerade) por establecimiento
-
-### Supuestos de Riesgo
-
-- **Tasa de conversión asumida:** 30–40% de establecimientos contactados se convierten en clientes activos (benchmark de industria)
-- **Ticket promedio estimado:** $3,000–$5,000 MXN/pedido en canal tradicional (validar en piloto)
-- **Frecuencia de recompra:** 1.5 pedidos/mes en promedio (varía por segmento: retail > horeca > institucional)
-
----
-
-## 1.5. Definición de Éxito
+## 1.4. Definición de Éxito
 
 ### Criterios de Evaluación del Proyecto
 
@@ -341,7 +289,7 @@ Una vez validado el contexto y los objetivos, el reporte se estructura en las si
 <div class="note" style="background: #fff3e0; border-left: 4px solid #ff9800; padding: 1rem; margin: 2rem 0;">
   <p style="margin: 0; font-weight: 600;">⚠️ Nota Importante</p>
   <p style="margin: 0.5rem 0 0 0;">
-    Este análisis es **inteligencia previa a la ejecución**, no un plan de acción cerrado. 
+    Este análisis es <strong>inteligencia previa a la ejecución</strong>, no un plan de acción cerrado. 
     Los datos y el modelo deben validarse con piloto de campo antes de escalar. 
     STRTGY recomienda un enfoque iterativo: prueba → aprende → ajusta → escala.
   </p>
@@ -350,5 +298,5 @@ Una vez validado el contexto y los objetivos, el reporte se estructura en las si
 ---
 
 <small style="color: #999;">
-  **Sección:** 1 de 7 | **Siguiente:** <a href="./datos-metodologia">2) Datos y Metodología</a>
+  <strong>Sección:</strong> 1 de 7 | <strong>Siguiente:</strong> <a href="./datos-metodologia">2) Datos y Metodología</a>
 </small>

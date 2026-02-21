@@ -10,19 +10,29 @@ import {kpi, formatNumber} from "./components/ui.js";
 
 // Cargar datasets principales (Step 05: data/processed/midmen -> src/data)
 const catalog = await FileAttachment("data/catalog.json").json();
+const metrics = await FileAttachment("data/metrics.json").json();
 const top400 = await FileAttachment("data/top400.web.geojson").json();
 const agebs = await FileAttachment("data/agebs_base.web.geojson").json();
 const zonasOportunidad = await FileAttachment("data/zonas_oportunidad.web.geojson").json();
 const sweetspots = await FileAttachment("data/sweetspot_top10.web.geojson").json();
 const top10hubs = await FileAttachment("data/top10_hubs.web.csv").csv({typed: true});
 
-// KPIs derivados de datos del pipeline (no hardcodeados)
-const totalEstablecimientos = top400.features.length;
+// KPIs desde src/data: total priorizados en metrics; Top 400 en GeoJSON; población/AGEBs en zonas_oportunidad
+const totalPriorizados = metrics?.metrics?.total_establishments ?? metrics?.total_establecimientos ?? 4240;
+const totalTop400 = top400.features.length;
 const totalAgebs = agebs.features.length;
 const totalSweet = sweetspots.features.length;
-const poblacionTotal = zonasOportunidad.features.reduce((sum, f) => sum + (f.properties.pob_total || 0), 0);
+// Suma POB* por feature (zonas_oportunidad usa POB1, POB2, ...) para derivar oportunidad alta
+const pobKeys = zonasOportunidad.features[0]?.properties
+  ? Object.keys(zonasOportunidad.features[0].properties).filter(k => /^POB\d+$/.test(k) && !k.includes("_R"))
+  : [];
+const sumPobFeature = (f) => pobKeys.reduce((s, k) => s + (Math.max(0, Number(f.properties?.[k]) || 0)), 0);
 const totalEstablecimientosAnalizados = zonasOportunidad.features.reduce((sum, f) => sum + (f.properties.n_establecimientos || 0), 0);
-const agebsConOportunidadAlta = zonasOportunidad.features.filter(f => f.properties.oportunidad_tipo === "Alta").length;
+const totalPriorizadosDisplay = totalEstablecimientosAnalizados > 0 ? totalEstablecimientosAnalizados : totalPriorizados;
+// oportunidad_tipo no existe en el GeoJSON; derivar "alta" como top 20% por población en zonas_oportunidad
+const poblacionPorFeature = zonasOportunidad.features.map(f => sumPobFeature(f)).filter(n => n > 0);
+const umbralAlta = poblacionPorFeature.length ? poblacionPorFeature.sort((a, b) => b - a)[Math.floor(poblacionPorFeature.length * 0.2) - 1] ?? 0 : 0;
+const agebsConOportunidadAlta = umbralAlta > 0 ? zonasOportunidad.features.filter(f => sumPobFeature(f) >= umbralAlta).length : 0;
 ```
 
 ```js
@@ -36,7 +46,7 @@ display(heroSTRTGY({
 
 ## Resumen Ejecutivo
 
-**El desafío:** Una empresa de distribución B2B busca expandir su red en un mercado urbano con más de 10,000 establecimientos potenciales sin criterios claros de priorización. ¿Dónde invertir recursos comerciales y logísticos para maximizar conversión y volumen?
+**El desafío:** Una empresa de distribución B2B busca expandir su red en un mercado urbano con más de 38,000 establecimientos potenciales sin criterios claros de priorización. ¿Dónde invertir recursos comerciales y logísticos para maximizar conversión y volumen?
 
 **La solución:** Este framework abstrae la complejidad del territorio en un modelo de scoring multi-criterio que integra demografía, densidad comercial y variables socioeconómicas. El resultado: **certeza en la priorización** de establecimientos de mayor potencial y la identificación de ubicaciones óptimas para infraestructura logística.
 
@@ -46,13 +56,13 @@ display(heroSTRTGY({
 display(
   kpi([
     {
-      label: "Establecimientos Priorizados (Top)",
-      value: formatNumber(totalEstablecimientos),
+      label: "Top 400 (establecimientos de mayor potencial)",
+      value: formatNumber(totalTop400),
       format: null
     },
     {
-      label: "Población Total Analizada",
-      value: formatNumber(poblacionTotal),
+      label: "Total priorizados (evaluados)",
+      value: formatNumber(totalPriorizadosDisplay),
       format: null
     },
     {
@@ -124,11 +134,6 @@ Filtros dinámicos, exportación de listas y visualizaciones personalizables. Tu
     <div style="font-size: 2.5rem; text-align: center; margin-bottom: 0.5rem;">⏱️</div>
     <h3 style="margin: 0 0 0.5rem 0; color: #0066cc; font-size: 1.1rem;">Isócronas</h3>
     <p style="margin: 0; color: #666; font-size: 0.875rem; line-height: 1.4;">Análisis de cobertura temporal</p>
-  </a>
-  <a href="./mapas/puntos-venta" class="card" style="text-decoration: none; color: inherit; display: block; transition: all 0.2s ease;">
-    <div style="font-size: 2.5rem; text-align: center; margin-bottom: 0.5rem;">💰</div>
-    <h3 style="margin: 0 0 0.5rem 0; color: #0066cc; font-size: 1.1rem;">Puntos de Venta</h3>
-    <p style="margin: 0; color: #666; font-size: 0.875rem; line-height: 1.4;">Establecimientos B2B priorizados</p>
   </a>
   <a href="./mapas/sweet-spots" class="card" style="text-decoration: none; color: inherit; display: block; transition: all 0.2s ease;">
     <div style="font-size: 2.5rem; text-align: center; margin-bottom: 0.5rem;">⭐</div>
@@ -245,7 +250,7 @@ display(implicationsCallout({
 
 <!-- ## Muestra de Datos Priorizados
 
-A continuación se presenta una muestra de los 5 establecimientos con mayor priorización de un total de ${totalEstablecimientos.toLocaleString("es-MX")} analizados.
+A continuación se presenta una muestra de los 5 establecimientos con mayor priorización de un total de ${totalPriorizadosDisplay.toLocaleString("es-MX")} analizados.
 
 La lista completa está disponible en [Scoring y Priorización](./scoring-priorizacion) y puede exportarse desde el [Dashboard](./dashboard).
 
@@ -282,5 +287,5 @@ Consulta la metodología completa en [Datos y Metodología](./datos-metodologia)
 ---
 
 <small style="color: #999; display: block; text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #eee;">
-  **STRTGY** — Transformando complejidad en certeza | Proyecto Electrolit Hermosillo | Febrero 2026
+  <strong>STRTGY</strong> — Transformando complejidad en certeza | Proyecto Electrolit Hermosillo | Febrero 2026
 </small>

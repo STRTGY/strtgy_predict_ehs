@@ -20,6 +20,16 @@ const top400 = await FileAttachment("../data/top400.web.geojson").json();
 ```
 
 ```js
+// Derivar segmento cuando no existe (top400 no trae segmento; usar flags/SCIAN)
+function derivarSegmento(p) {
+  if (p.segmento) return p.segmento;
+  if (p.es_farmacia || p.es_retail_moderno) return "retail";
+  const rama = (p.scian_rama || "").toString();
+  if (rama.startsWith("72")) return "horeca";
+  if (rama.startsWith("62") || rama.startsWith("61")) return "institucional";
+  return "otro";
+}
+
 // Calcular score compuesto y extraer top 20
 // Fórmula: (40% volumen + 35% margen + 25% fit) normalizado a 100
 const featuresConScore = (top400.features || []).map(f => {
@@ -35,7 +45,8 @@ const featuresConScore = (top400.features || []).map(f => {
     ...f,
     properties: {
       ...p,
-      score_electrolit: scoreCompuesto
+      score_electrolit: scoreCompuesto,
+      segmento: derivarSegmento(p)
     }
   };
 });
@@ -122,10 +133,10 @@ top20Features.forEach((f, i) => {
       <span style="display: inline-block; width: 10px; height: 10px; background: ${segmentoColor}; border-radius: 50%; margin-right: 5px;"></span>
       ${p.segmento || 'N/A'}
     </td>
-    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: 700; color: #2e7d32; font-size: 1.1em;">${p.score_electrolit?.toFixed(1) || 'N/A'}</td>
-    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #7b1fa2;">${p.score_volumen?.toFixed(1) || 'N/A'}</td>
-    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #00796b;">${p.score_margen?.toFixed(1) || 'N/A'}</td>
-    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #c62828;">${p.score_fit?.toFixed(1) || 'N/A'}</td>
+    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: 700; color: #2e7d32; font-size: 1.1em;">${(p.score_total != null ? p.score_total : p.score_electrolit)?.toFixed(1) ?? 'N/A'}</td>
+    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #7b1fa2;">${p.score_volumen?.toFixed(1) ?? 'N/A'}</td>
+    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #00796b;">${p.score_margen?.toFixed(1) ?? 'N/A'}</td>
+    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #c62828;">${p.score_fit?.toFixed(1) ?? 'N/A'}</td>
   `;
   tbody.appendChild(row);
 });

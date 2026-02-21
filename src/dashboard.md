@@ -46,8 +46,7 @@ const top400 = {
 ```js
 display(sectionHeader({
   title: "Dashboard Interactivo de Priorización",
-  subtitle: "Explora, filtra y exporta establecimientos priorizados con controles dinámicos",
-  certainty: "high"
+  subtitle: "Explora, filtra y exporta establecimientos priorizados con controles dinámicos"
 }));
 ```
 
@@ -553,5 +552,5 @@ display(cardCasos);
 ---
 
 <small style="color: #999;">
-  **Sección:** 7 de 7 | **Anterior:** <a href="./logistica-sonora">6) Logística y Sonora</a> | **Ver también:** <a href="./descargas">Descargas</a>
+  <strong>Sección:</strong> 7 de 7 | <strong>Anterior:</strong> <a href="./logistica-sonora">6) Logística y Sonora</a>
 </small>

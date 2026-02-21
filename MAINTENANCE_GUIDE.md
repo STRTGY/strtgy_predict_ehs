@@ -100,23 +100,18 @@ display(heroSTRTGY({
 
 ---
 
-### 2. Section Headers with Certainty
+### 2. Section Headers
 
 ```javascript
 import {sectionHeader} from "./components/brand.js";
 
 display(sectionHeader({
   title: "Section Title",
-  subtitle: "Optional explanation",
-  certainty: "high"  // Options: "high", "medium", "low"
+  subtitle: "Optional explanation"
 }));
 ```
 
-**When to use:** Major section breaks with quality indicators
-**Certainty levels:**
-- `"high"` = Green "Alta certeza" badge (validated data)
-- `"medium"` = Yellow "Certeza media" badge (calculated estimates)
-- `"low"` = Red "Validar" badge (requires field validation)
+**When to use:** Major section breaks
 
 ---
 
@@ -483,12 +478,11 @@ Before publishing changes, verify:
 2. **Use existing components** instead of recreating styles
 3. **Follow the color palette** strictly (no random colors)
 4. **Maintain consistent spacing** (2rem for sections, 1.25-2rem for cards)
-5. **Add certainty badges** when data quality varies
-6. **Use descriptive variable names** (no `data1`, `data2`)
-7. **Comment complex logic** but keep code self-documenting
-8. **Test on mobile** (use Chrome DevTools responsive mode)
-9. **Optimize images** before adding to `src/` directory
-10. **Keep it simple** - clarity over cleverness
+5. **Use descriptive variable names** (no `data1`, `data2`)
+6. **Comment complex logic** but keep code self-documenting
+7. **Test on mobile** (use Chrome DevTools responsive mode)
+8. **Optimize images** before adding to `src/` directory
+9. **Keep it simple** - clarity over cleverness
 
 ---
 

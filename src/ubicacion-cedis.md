@@ -3,16 +3,21 @@
 ```js
 import {isDataAvailable, dataNotAvailableMessage, createLoaders} from "./data/loaders.js";
 import {kpi, formatNumber, formatPercent, table, badge, grid, card} from "./components/ui.js";
-import {heroSTRTGY, decisionCallout, implicationsCallout, sectionHeader, certaintyBadge} from "./components/brand.js";
+import {heroSTRTGY, decisionCallout, implicationsCallout, sectionHeader} from "./components/brand.js";
 import * as Inputs from "npm:@observablehq/inputs";
 
-// Load data: pipeline filenames (.web) and grid via loader (fallback to agebs_scored in loaders.js)
+// Load data: pipeline filenames (.web) and grid (same path pattern as other assets)
 const loaders = createLoaders({ FileAttachment });
-const isocronas = await FileAttachment("./data/isocronas_5_10_15.web.geojson").json();
-const grid500m = await loaders.loadGrid500m();
-const zonasInteres = await FileAttachment("./data/puntos_candidatos_cedis.web.geojson").json();
-const agebGeo = await FileAttachment("./data/agebs_base.web.geojson").json();
-const denue = await FileAttachment("./data/scored.sample.web.geojson").json();
+const metricsData = await FileAttachment("data/metrics.json").json().catch(() => null);
+const isocronas = await FileAttachment("data/isocronas_5_10_15.web.geojson").json().catch(() => null);
+const gridFromLoader = await loaders.loadGrid500m();
+const gridDirect = await FileAttachment("data/grid_suitability.web.geojson").json().catch(() => null);
+const grid500m = (gridFromLoader?.features?.length > 0) ? gridFromLoader : (gridDirect?.features?.length > 0 ? gridDirect : null);
+const zonasInteresGeo = await FileAttachment("data/puntos_candidatos_cedis.geojson").json().catch(() => null);
+const zonasInteresWeb = await FileAttachment("data/puntos_candidatos_cedis.web.geojson").json().catch(() => null);
+const zonasInteres = (zonasInteresGeo?.features?.length && zonasInteresGeo.features[0]?.properties?.customers_5km != null) ? zonasInteresGeo : zonasInteresWeb;
+const agebGeo = await FileAttachment("data/agebs_base.web.geojson").json().catch(() => null);
+const denue = await FileAttachment("data/scored.sample.web.geojson").json().catch(() => null);
 ```
 
 ```js
@@ -67,11 +72,12 @@ display(decisionCallout({
 ```js
 if (isDataAvailable(isocronas)) {
   // Calculate coverage by isochrone
-  const iso5 = isocronas.features.filter(f => f.properties.range === 300);
-  const iso10 = isocronas.features.filter(f => f.properties.range === 600);
-  const iso15 = isocronas.features.filter(f => f.properties.range === 900);
+  const r = (f) => f?.properties?.range_value ?? f?.properties?.range;
+  const iso5 = isocronas.features.filter(f => r(f) === 300);
+  const iso10 = isocronas.features.filter(f => r(f) === 600);
+  const iso15 = isocronas.features.filter(f => r(f) === 900);
   const zonasCount = zonasInteres?.features?.length || 3;
-  const establecimientosDenue = denue?.features?.length || 0;
+  const establecimientosAnalizados = metricsData?.metrics?.total_establishments ?? metricsData?.total_establecimientos ?? 0;
   
   display(html`
     <div style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); padding: 2rem; border-radius: 12px; margin: 2rem 0;">
@@ -81,8 +87,8 @@ if (isDataAvailable(isocronas)) {
       ${kpi([
         {
           label: "Establecimientos Analizados",
-          value: formatNumber(establecimientosDenue),
-          trend: "Base DENUE"
+          value: formatNumber(establecimientosAnalizados),
+          trend: "Prioritarios (metrics)"
         },
         {
           label: "Isocronas Calculadas",
@@ -170,10 +176,11 @@ if (isDataAvailable(isocronas)) {
     traffic: trafficLayer
   };
   
-  // Separate isocronas by time range
-  const iso5Features = isocronas.features.filter(f => f.properties.range === 300);
-  const iso10Features = isocronas.features.filter(f => f.properties.range === 600);
-  const iso15Features = isocronas.features.filter(f => f.properties.range === 900);
+  // Separate isocronas by time range (data uses range_value in seconds: 300=5min, 600=10min, 900=15min)
+  const rangeVal = (f) => f?.properties?.range_value ?? f?.properties?.range;
+  const iso5Features = isocronas.features.filter(f => rangeVal(f) === 300);
+  const iso10Features = isocronas.features.filter(f => rangeVal(f) === 600);
+  const iso15Features = isocronas.features.filter(f => rangeVal(f) === 900);
   
   // 15 min isochrone (outermost, lightest)
   if (iso15Features.length > 0) {
@@ -299,53 +306,52 @@ if (isDataAvailable(isocronas)) {
     }).addTo(layerGroups.establecimientos);
   }
   
-  // Add grid 500m (if available) with density coloring
+  // Add grid 500m (if available) with density coloring (pane above isochrones so it is visible)
   if (isDataAvailable(grid500m)) {
-    const scores = grid500m.features.map(f => f.properties.suitability_score || 0).filter(s => s > 0);
+    const gridPane = map.createPane("gridIdoneidad");
+    gridPane.style.zIndex = 450;
+    const getScore = (f) => f?.properties?.suitability_score ?? f?.properties?.score_grid ?? 0;
+    const scores = grid500m.features.map(f => getScore(f)).filter(s => s > 0);
     const maxScore = scores.length > 0 ? Math.max(...scores) : 100;
     const minScore = scores.length > 0 ? Math.min(...scores) : 0;
     
-    // Color scale function: green (low) -> yellow (medium) -> orange (high) -> red (very high)
+    // Color scale: Baja (0-25%) -> Media (25-50%) -> Alta (50-75%) -> Muy Alta (>75%)
     const getColor = (score) => {
-      if (score === 0) return "#cccccc";
-      
-      // Normalize score to 0-1 range
+      if (score === 0) return "#e0e0e0";
       const normalized = maxScore > minScore ? (score - minScore) / (maxScore - minScore) : 0;
-      
-      if (normalized < 0.25) return "#ffffb2"; // Light yellow (low)
-      if (normalized < 0.5) return "#fecc5c";  // Yellow (medium-low)
-      if (normalized < 0.75) return "#fd8d3c"; // Orange (medium-high)
-      return "#f03b20"; // Red-orange (high)
+      if (normalized < 0.25) return "#ffffb2";
+      if (normalized < 0.5) return "#fecc5c";
+      if (normalized < 0.75) return "#fd8d3c";
+      return "#f03b20";
     };
     
     L.geoJSON(grid500m, {
+      pane: "gridIdoneidad",
       style: (feature) => {
-        const score = feature.properties.suitability_score || 0;
+        const score = feature.properties?.suitability_score ?? feature.properties?.score_grid ?? 0;
         const color = getColor(score);
-        const opacity = score > 0 ? 0.5 : 0.1;
-        
+        const opacity = score > 0 ? 0.55 : 0.15;
         return {
-          color: score > 60 ? "#d73027" : "#999",
-          weight: score > 60 ? 1.5 : 0.5,
+          color: "#888",
+          weight: 0.8,
           fillOpacity: opacity,
           fillColor: color
         };
       },
       onEachFeature: (feature, layer) => {
-        const props = feature.properties;
-        const score = props.suitability_score || 0;
-        const customers5km = props.customers_5km || 0;
-        const customers10km = props.customers_10km || 0;
-        const coverage = props.coverage_ratio || 0;
-        
+        const props = feature.properties || {};
+        const score = props.suitability_score ?? props.score_grid ?? 0;
+        const customers5km = props.customers_5km ?? 0;
+        const customers10km = props.customers_10km ?? 0;
+        const coverage = props.coverage_ratio ?? 0;
         layer.bindPopup(`
           <div style="font-family: system-ui; padding: 0.5rem; min-width: 220px;">
-            <strong style="color: var(--strtgy-orange); font-size: 1.1rem;">📊 Cuadrícula 500m</strong><br>
+            <strong style="color: var(--strtgy-orange); font-size: 1.1rem;">Cuadrícula 500m</strong><br>
             <div style="margin-top: 0.5rem; font-size: 0.9rem;">
-              <strong>Score Idoneidad:</strong> ${score.toFixed(2)}<br>
+              <strong>Score Idoneidad:</strong> ${Number(score).toFixed(2)}<br>
               <strong>Clientes 5km:</strong> ${customers5km}<br>
               <strong>Clientes 10km:</strong> ${customers10km}<br>
-              <strong>Cobertura:</strong> ${(coverage * 100).toFixed(1)}%
+              <strong>Cobertura:</strong> ${(Number(coverage) * 100).toFixed(1)}%
             </div>
           </div>
         `);
@@ -353,9 +359,10 @@ if (isDataAvailable(isocronas)) {
     }).addTo(layerGroups.densidad);
   }
   
-  // Initialize layers with default visibility
+  // Initialize layers with default visibility (include grid so map shows full info)
   layerGroups.iso5.addTo(map);
   layerGroups.iso10.addTo(map);
+  if (isDataAvailable(grid500m)) layerGroups.densidad.addTo(map);
   
   // Fit map to isocronas bounds (only once at initialization)
   if (iso5Features.length > 0 || iso10Features.length > 0) {
@@ -442,7 +449,7 @@ if (isDataAvailable(isocronas)) {
 const showIso5 = view(Inputs.toggle({label: "🎯 5 minutos", value: true}));
 const showIso10 = view(Inputs.toggle({label: "⏱️ 10 minutos", value: true}));
 const showIso15 = view(Inputs.toggle({label: "⏰ 15 minutos", value: false}));
-const showDensidad = view(Inputs.toggle({label: "📊 Densidad comercial", value: false}));
+const showDensidad = view(Inputs.toggle({label: "📊 Densidad comercial", value: true}));
 const showEstablecimientos = view(Inputs.toggle({label: "🏪 Establecimientos", value: false}));
 const showTraffic = view(Inputs.toggle({label: "🚦 Tráfico en vivo", value: false}));
 ```
@@ -529,26 +536,44 @@ if (window._mapaUbicacion) {
 ```js
 display(sectionHeader({
   title: "Evaluación Multicriterio de Escenarios",
-  subtitle: "Análisis comparativo de ubicaciones candidatas para CEDIS con scoring ponderado",
-  certainty: "medium"
+  subtitle: "Análisis comparativo de ubicaciones candidatas para CEDIS con scoring ponderado"
 }));
 ```
 
 ```js
 if (isDataAvailable(zonasInteres)) {
-  // Create enhanced comparison data with scoring
-  const escenarios = zonasInteres.features.map((f, idx) => {
+  const features = zonasInteres.features;
+  const hasCustomers = features[0]?.properties?.customers_5km != null;
+  const pob12Values = hasCustomers ? [] : features.map(f => Math.max(0, Number(f?.properties?.POB12) ?? 0));
+  const minPob12 = pob12Values.length ? Math.min(...pob12Values) : 0;
+  const maxPob12 = pob12Values.length ? Math.max(...pob12Values) : 1;
+
+  const escenarios = features.map((f, idx) => {
     const nombre = f.properties.nombre || `Escenario ${idx + 1}`;
-    const score = f.properties.score || 50;
-    const rank = f.properties.rank || (idx + 1);
-    
-    // Scoring logic based on actual grid data properties
+    const score = f.properties.score ?? 50;
+    const rank = f.properties.rank ?? (idx + 1);
+
+    let accesibilidad, densidad;
+    if (f.properties.score_proximity != null) {
+      accesibilidad = f.properties.score_proximity;
+    } else if (f.properties.customers_5km != null) {
+      accesibilidad = Math.min(100, (f.properties.customers_5km / 100) * 100);
+    } else {
+      accesibilidad = Math.min(100, Math.max(0, 100 - (rank - 1) * 5));
+    }
+    if (f.properties.score_coverage != null) {
+      densidad = f.properties.score_coverage;
+    } else if (f.properties.customers_10km != null) {
+      densidad = Math.min(100, (f.properties.customers_10km / 200) * 100);
+    } else {
+      const p12 = Math.max(0, Number(f?.properties?.POB12) ?? 0);
+      densidad = maxPob12 > minPob12 ? Math.round(20 + 80 * (p12 - minPob12) / (maxPob12 - minPob12)) : 50;
+    }
+
     const scores = {
-      accesibilidad: f.properties.score_proximity || 
-        (f.properties.customers_5km ? Math.min(100, (f.properties.customers_5km / 100) * 100) : Math.max(50, score - 10)),
-      densidad: f.properties.score_coverage || 
-        (f.properties.customers_10km ? Math.min(100, (f.properties.customers_10km / 200) * 100) : score),
-      logistica: f.properties.score_infrastructure || (rank <= 2 ? 85 : 70),
+      accesibilidad,
+      densidad,
+      logistica: f.properties.score_infrastructure ?? (rank <= 2 ? 85 : 70),
       costo: rank === 1 ? 60 : (rank === 2 ? 75 : 80)
     };
     
@@ -704,7 +729,7 @@ display(implicationsCallout({
   title: "💡 Insights Clave y Recomendaciones",
   items: [
     "El análisis de isocronas identifica ubicaciones óptimas con cobertura >70% de establecimientos objetivo en 10 minutos",
-    "Las ubicaciones candidatas balancean accesibilidad comercial y viabilidad logística para operaciones B2B",
+    "Las ubicaciones candidatas balancean accesibilidad comercial y operabilidad logística para operaciones B2B",
     "La densidad comercial por cuadrícula confirma concentración de demanda en corredores identificados",
     "Se recomienda validación de campo para confirmar disponibilidad inmobiliaria y restricciones operativas"
   ]
@@ -719,7 +744,7 @@ display(html`<div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e
     <div style="background: rgba(0, 166, 81, 0.15); border-left: 4px solid #00a651; padding: 1.25rem; border-radius: 8px;">
       <h4 style="margin: 0 0 0.75rem 0; color: #00d66c; font-size: 1.1rem;">✅ Ubicación Óptima Identificada</h4>
       <p style="margin: 0; line-height: 1.6; font-size: 0.95rem; opacity: 0.95;">
-        <strong>Ventajas:</strong> Máxima cobertura de establecimientos objetivo, equilibrio entre accesibilidad comercial y viabilidad logística.<br>
+        <strong>Ventajas:</strong> Máxima cobertura de establecimientos objetivo, equilibrio entre accesibilidad comercial y operabilidad logística.<br>
         <strong>Próximos pasos:</strong> Validación inmobiliaria, análisis de costos operativos, confirmación de restricciones de tráfico.
       </p>
     </div>

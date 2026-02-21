@@ -7,12 +7,13 @@ toc: true
 import {sectionHeader, decisionCallout, implicationsCallout, roiMetric} from "./components/brand.js";
 import {kpi, formatNumber, table} from "./components/ui.js";
 
-// Cobertura real desde top10_logistica (HERE isócronas 5/10 min); fallback a top10_cedis
+// Cobertura real desde top10_logistica (HERE isócronas 5/10 min); fallback a top10_cedis. Total Top 400 desde datos.
+const top400Geo = await FileAttachment("data/top400.web.geojson").json().catch(() => null);
+const totalTop400 = top400Geo?.features?.length ?? 400;
 let top10hubs = [];
 try {
   const logistica = await FileAttachment("data/top10_logistica.web.csv").csv({typed: true});
   if (logistica && logistica.length > 0 && "coverage_10min" in logistica[0]) {
-    const totalTop400 = 400;
     top10hubs = logistica.map(h => ({
       ...h,
       coverage_5min: h.coverage_5min != null ? Number(h.coverage_5min) : null,
@@ -27,10 +28,9 @@ if (top10hubs.length === 0) {
   const top10cedis = await FileAttachment("data/top10_cedis.web.csv").csv({typed: true});
   const hasCoverage = top10cedis?.[0] && ("coverage_10min" in top10cedis[0] || "customers_10km" in top10cedis[0]);
   if (top10cedis && hasCoverage) {
-    const total = 400;
     top10hubs = top10cedis.map(h => {
-      const cov10 = h.coverage_10min != null ? Number(h.coverage_10min) : (h.customers_10km / total * 100);
-      const cov5 = h.coverage_5min != null ? Number(h.coverage_5min) : (h.customers_5km / total * 100);
+      const cov10 = h.coverage_10min != null ? Number(h.coverage_10min) : (totalTop400 > 0 ? (h.customers_10km / totalTop400 * 100) : null);
+      const cov5 = h.coverage_5min != null ? Number(h.coverage_5min) : (totalTop400 > 0 ? (h.customers_5km / totalTop400 * 100) : null);
       return { ...h, coverage_5min: cov5, coverage_10min: cov10, score_logistico: h.score };
     });
   } else {
@@ -47,8 +47,7 @@ if (top10hubs.length === 0) {
 ```js
 display(sectionHeader({
   title: "Logística y Expansión a Sonora",
-  subtitle: "Análisis de cobertura territorial, ubicación óptima de CEDIS y estrategia de expansión regional",
-  certainty: "medium"
+  subtitle: "Análisis de cobertura territorial, ubicación óptima de CEDIS y estrategia de expansión regional"
 }));
 ```
 
@@ -58,7 +57,7 @@ display(decisionCallout({
   items: [
     "Aprobar inversión en CEDIS en Hermosillo (ubicación específica del top 3) o diferir hasta validar demanda",
     "Definir si Hermosillo consolida antes de expandir, o si se ataca Sonora en paralelo con modelo de micro-hubs",
-    "Evaluar viabilidad de distribución desde Hermosillo a ciudades secundarias (Cajeme, Nogales) vs. hubs regionales independientes",
+    "Evaluar opciones de distribución desde Hermosillo a ciudades secundarias (Cajeme, Nogales) vs. hubs regionales independientes",
     "Determinar el modelo operativo: flota propia, 3PL (third-party logistics), o híbrido"
   ]
 }));
@@ -228,7 +227,7 @@ Toda la distribución de Sonora se maneja desde CEDIS en Hermosillo, con rutas r
 - Mayor costo de combustible y depreciación de flota
 - Menor flexibilidad para pedidos urgentes
 
-**Viabilidad:** ✅ Recomendado para **Fase 1 (Año 1)**
+**Recomendación:** ✅ Para **Fase 1 (Año 1)**
 
 ---
 
@@ -246,7 +245,7 @@ CEDIS principal en Hermosillo + mini-almacén en Ciudad Obregón para servir el 
 - Complejidad de gestión de inventario multi-ubicación
 - Requiere volumen significativo para justificar ROI
 
-**Viabilidad:** ⚠️ Considerar solo si **ventas en Hermosillo superan $2M MXN/mes sostenidos** (indicador de demanda regional robusta)
+**Recomendación:** ⚠️ Considerar solo cuando la operación en Hermosillo esté consolidada y exista demanda comprobada en el sur de Sonora
 
 ---
 
@@ -265,7 +264,7 @@ CEDIS propio en Hermosillo + subcontratación de distribución regional a operad
 - Menor control de calidad de servicio
 - Dependencia de proveedor externo
 
-**Viabilidad:** ✅ Recomendado para **rutas esporádicas** (Nogales, Navojoa) mientras se valida demanda
+**Recomendación:** ✅ Para **rutas esporádicas** (Nogales, Navojoa) en expansión regional
 
 ---
 
@@ -293,5 +292,5 @@ display(implicationsCallout({
 ---
 
 <small style="color: #999;">
-  **Sección:** 6 de 7 | **Anterior:** <a href="./scoring-priorizacion">5) Scoring y Priorización</a> | **Siguiente:** <a href="./dashboard">7) Dashboard</a>
+  <strong>Sección:</strong> 6 de 7 | <strong>Anterior:</strong> <a href="./scoring-priorizacion">5) Scoring y Priorización</a> | <strong>Siguiente:</strong> <a href="./dashboard">7) Dashboard</a>
 </small>

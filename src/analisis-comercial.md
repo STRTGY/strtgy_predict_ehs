@@ -12,7 +12,46 @@ const denueMetadata = await FileAttachment("data/denue_hermosillo_metadata.json"
 const denuePrioritarios = await FileAttachment("data/denue_hermosillo_prioritarios.web.geojson").json();
 const scianCategoriesRaw = await FileAttachment("data/denue_hermosillo_categorias_scian.web.csv").csv({typed: true});
 const loaders = createLoaders({ FileAttachment });
-const grid500m = await loaders.loadGrid500m();
+let grid500m = await loaders.loadGrid500m();
+// Fallback: loader puede resolver sin "data/"; cargar explícitamente desde src/data
+if (!grid500m?.features?.length) {
+  try {
+    const gridRaw = await FileAttachment("data/grid_suitability.web.geojson").json();
+    if (gridRaw?.type === "FeatureCollection" && gridRaw.features?.length > 0) {
+      grid500m = {
+        ...gridRaw,
+        features: gridRaw.features.map(f => ({
+          ...f,
+          properties: {
+            ...f.properties,
+            score_grid: f.properties.suitability_score ?? f.properties.score_grid ?? 0,
+            dens_comercial: f.properties.density_commercial ?? f.properties.dens_comercial ?? 0,
+            pob18: f.properties.pob_18plus ?? f.properties.pob18 ?? 0
+          }
+        }))
+      };
+    }
+  } catch (_) {}
+}
+if (!grid500m?.features?.length) {
+  try {
+    const agebsRaw = await FileAttachment("data/agebs_scored.web.geojson").json();
+    if (agebsRaw?.type === "FeatureCollection" && agebsRaw.features?.length > 0) {
+      grid500m = {
+        ...agebsRaw,
+        features: agebsRaw.features.map(f => ({
+          ...f,
+          properties: {
+            ...f.properties,
+            score_grid: f.properties.score_total ?? f.properties.score ?? f.properties.score_grid ?? 0,
+            dens_comercial: f.properties.dens_comercial ?? f.properties.density_commercial ?? 0,
+            pob18: f.properties.pob18 ?? f.properties.pob_18plus ?? 0
+          }
+        }))
+      };
+    }
+  } catch (_) {}
+}
 
 // Códigos SCIAN prioritarios para Electrolit (referencia: configs/reference/scian_comercio_inegi_2023.yaml)
 // 4311/4312 = mayoreo; 4611, 4621, 4641 = retail. Conveniencia/minisupers = 462112 (rama 4621).
@@ -132,6 +171,9 @@ display(kpi([
 display(html`<p style="font-size: 0.875rem; color: var(--theme-foreground-muted); text-align: center; margin-top: 1rem;">
   Los establecimientos prioritarios representan el <strong>${pctPrioritarios}%</strong> del total, 
   concentrados en farmacias, tiendas de conveniencia y distribuidores de bebidas.
+</p>
+<p style="font-size: 0.75rem; color: var(--theme-foreground-muted); text-align: center; margin-top: 0.25rem;">
+  Fuente: totales desde <code>denue_hermosillo_metadata.json</code>; retail/mayoreo desde <code>denue_hermosillo_categorias_scian.web.csv</code> (src/data).
 </p>`);
 ```
 
@@ -151,13 +193,13 @@ const SCIAN_NOMBRES = {
   "4641": "Farmacias"
 };
 
-// Filtrar solo categorías con establecimientos prioritarios
+// Filtrar solo categorías con establecimientos prioritarios (4311/4312 = Mayoreo; resto prioritario = Retail)
 const categoriasPrioritarias = (scianCategories || [])
   .filter(d => d.n_prioritarios > 0)
   .map(d => ({
     ...d,
-    nombre: SCIAN_NOMBRES[d.scian_rama] || `SCIAN ${d.scian_rama}`,
-    tipo: ["4311", "4312"].includes(d.scian_rama) ? "Mayoreo" : "Retail"
+    nombre: SCIAN_NOMBRES[String(d.scian_rama)] || `SCIAN ${d.scian_rama}`,
+    tipo: ["4311", "4312"].includes(String(d.scian_rama)) ? "Mayoreo" : "Retail"
   }))
   .sort((a, b) => b.n_prioritarios - a.n_prioritarios);
 
@@ -302,12 +344,19 @@ if (hasDenuePrioritarios) {
     "mayoreo": "#ff6b35",
     "otro": "#cccccc"
   };
+  // Derivar canal desde scian_rama si el GeoJSON no trae categoria_electrolit (4311/4312 = mayoreo; 4611, 4621, 4641 = retail)
+  const scianToCanal = (scianRama) => {
+    const r = String(scianRama ?? "");
+    if (r === "4311" || r === "4312") return "mayoreo";
+    if (r === "4611" || r === "4621" || r === "4641") return "retail";
+    return "otro";
+  };
   
   // Add markers
   L.geoJSON(denuePrioritarios, {
     pointToLayer: (feature, latlng) => {
       const props = feature.properties;
-      const category = props.categoria_electrolit || "otro";
+      const category = props.categoria_electrolit || scianToCanal(props.scian_rama);
       const scoreFit = props.score_fit_base || 5;
       
       return L.circleMarker(latlng, {
@@ -322,7 +371,7 @@ if (hasDenuePrioritarios) {
     onEachFeature: (feature, layer) => {
       const props = feature.properties;
       const nombre = props.nom_estab || props.NOM_ESTAB || props.nombre || "Sin nombre";
-      const categoria = props.categoria_electrolit || "otro";
+      const categoria = props.categoria_electrolit || scianToCanal(props.scian_rama);
       const prioridad = props.prioridad_electrolit || "N/D";
       const scoreFit = props.score_fit_base || 0;
       
@@ -336,21 +385,31 @@ if (hasDenuePrioritarios) {
     }
   }).addTo(map);
   
-  // Legend
+  // Legend: conteos desde el GeoJSON con la misma lógica de canal (scian_rama -> retail/mayoreo)
+  const countsFromMap = denuePrioritarios.features.reduce((acc, f) => {
+    const cat = f.properties?.categoria_electrolit || scianToCanal(f.properties?.scian_rama);
+    if (cat === "retail") acc.retail += 1;
+    else if (cat === "mayoreo") acc.mayoreo += 1;
+    return acc;
+  }, { retail: 0, mayoreo: 0 });
+  const legendRetail = countsFromMap.retail + countsFromMap.mayoreo > 0 ? countsFromMap.retail : retail;
+  const legendMayoreo = countsFromMap.retail + countsFromMap.mayoreo > 0 ? countsFromMap.mayoreo : mayoreo;
+  
   const legendControl = L.control({position: 'bottomright'});
   legendControl.onAdd = function() {
     const div = L.DomUtil.create('div', 'map-legend');
+    div.style.cssText = "background:#fff;padding:14px 16px;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.2);font-size:14px;line-height:1.5;min-width:180px;border:1px solid rgba(0,0,0,0.1);";
     div.innerHTML = `
-      <h4>Categoría</h4>
-      <div class="map-legend-item">
-        <div class="map-legend-color" style="background-color: ${colorMap.retail};"></div>
-        <span>Retail (${retail})</span>
+      <h4 style="margin:0 0 10px;font-size:15px;font-weight:700;color:#222;padding-bottom:6px;border-bottom:2px solid #0066cc;">Categoría</h4>
+      <div class="map-legend-item" style="display:flex;align-items:center;margin:8px 0;">
+        <div class="map-legend-color" style="width:24px;height:18px;margin-right:12px;border:1px solid rgba(0,0,0,0.25);border-radius:4px;flex-shrink:0;background-color:${colorMap.retail};"></div>
+        <span style="font-size:14px;color:#333;font-weight:600;">Retail (${formatNumber(legendRetail)})</span>
       </div>
-      <div class="map-legend-item">
-        <div class="map-legend-color" style="background-color: ${colorMap.mayoreo};"></div>
-        <span>Mayoreo (${mayoreo})</span>
+      <div class="map-legend-item" style="display:flex;align-items:center;margin:8px 0;">
+        <div class="map-legend-color" style="width:24px;height:18px;margin-right:12px;border:1px solid rgba(0,0,0,0.25);border-radius:4px;flex-shrink:0;background-color:${colorMap.mayoreo};"></div>
+        <span style="font-size:14px;color:#333;font-weight:600;">Mayoreo (${formatNumber(legendMayoreo)})</span>
       </div>
-      <p style="font-size: 0.75rem; margin-top: 0.5rem;">Tamaño: Score Fit (5-10)</p>
+      <p style="font-size:13px;color:#555;margin:12px 0 0;padding-top:8px;border-top:1px solid #eee;">Tamaño: Score Fit (5-10)</p>
     `;
     return div;
   };
@@ -371,7 +430,7 @@ const hasGrid500m = grid500m?.features?.length > 0;
 if (hasGrid500m) {
   display(html`<div class="note">
     <p><strong>Mapa de calor de densidad comercial</strong></p>
-    <p>Cuadrícula de 500m coloreada por densidad de establecimientos. Zonas más oscuras indican mayor concentración comercial.</p>
+    <p>Cuadrícula de 500m coloreada por densidad de establecimientos. Zonas más oscuras indican mayor concentración comercial. La cuadrícula cubre el área de estudio (Hermosillo); en zonas fuera del núcleo (p. ej. Miguel Alemán, Bahía de Kino) es normal que no haya celdas o que aparezcan con densidad muy baja o sin color.</p>
   </div>`);
 }
 ```
@@ -393,28 +452,34 @@ if (hasGrid500m) {
     attribution: "© OpenStreetMap contributors"
   }).addTo(map);
   
-  // Calculate color scale
+  // Escala por cuantiles con el doble de saltos (8 niveles) para mejor lectura de la distribución
   const gridScores = grid500m.features.map(f => f.properties.dens_comercial || f.properties.score_grid || f.properties.suitability_score || 0);
-  const maxGridScore = Math.max(...gridScores);
-  const minGridScore = Math.min(...gridScores.filter(s => s > 0));
+  const positiveScores = gridScores.filter(s => s > 0).sort((a, b) => a - b);
+  const n = positiveScores.length;
+  const quantile = (arr, q) => arr[Math.min(Math.floor(q * arr.length), arr.length - 1)] ?? 0;
+  const breaks = n > 0 ? [0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875].map(q => quantile(positiveScores, q)) : [];
+  const colorsByLevel = [
+    "#fff8e1", "#ffecb3", "#ffe082", "#ffb74d", "#ff9800", "#f57c00", "#e65100", "#bf360c"
+  ];
+  
+  const getLevelIndex = (dens) => {
+    if (dens <= 0) return -1;
+    for (let i = 0; i < breaks.length; i++) if (dens <= breaks[i]) return i;
+    return breaks.length;
+  };
   
   // Add grid with heat coloring
   L.geoJSON(grid500m, {
     style: (feature) => {
       const dens = feature.properties.dens_comercial || feature.properties.score_grid || feature.properties.suitability_score || 0;
+      const idx = getLevelIndex(dens);
       
-      if (dens === 0) {
-        return {color: "#e0e0e0", weight: 0.3, fillOpacity: 0, fillColor: "transparent"};
+      if (idx < 0) {
+        return {color: "#e0e0e0", weight: 0.3, fillOpacity: 0.2, fillColor: "#e0e0e0"};
       }
       
-      const normalized = maxGridScore > minGridScore ? (dens - minGridScore) / (maxGridScore - minGridScore) : 0;
-      const opacity = 0.2 + (normalized * 0.5);
-      
-      // Color gradient: light orange to dark red
-      let color;
-      if (normalized > 0.7) color = "#d32f2f";
-      else if (normalized > 0.4) color = "#ff6b35";
-      else color = "#ffb74d";
+      const color = colorsByLevel[idx];
+      const opacity = 0.45 + (idx / (colorsByLevel.length - 1)) * 0.45;
       
       return {
         color: color,
@@ -428,8 +493,7 @@ if (hasGrid500m) {
       const densValue = props.dens_comercial || props.score_grid || props.suitability_score || 0;
       layer.bindPopup(`
         <strong>Cuadrícula 500m</strong><br>
-        Densidad/Score: ${Number(densValue).toFixed(2)}<br>
-        Población 18+: ${props.pob18 || props.pob_18plus || "N/D"}
+        Densidad/Score: ${Number(densValue).toFixed(2)}
       `);
     }
   }).addTo(map);
@@ -438,24 +502,22 @@ if (hasGrid500m) {
   const gridLayer = L.geoJSON(grid500m);
   map.fitBounds(gridLayer.getBounds());
   
-  // Legend
+  // Leyenda: 8 niveles (doble de saltos), fondo sólido
+  const legendLabels = ["Muy baja", "Baja", "Media-baja", "Media", "Media-alta", "Alta", "Muy alta", "Máxima"];
   const legendControl = L.control({position: 'bottomright'});
   legendControl.onAdd = function() {
     const div = L.DomUtil.create('div', 'map-legend');
+    div.style.cssText = "background:#fff;padding:12px 14px;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.2);font-size:13px;line-height:1.4;min-width:140px;max-height:320px;overflow-y:auto;border:1px solid rgba(0,0,0,0.1);";
+    const items = colorsByLevel.map((hex, i) => `
+      <div style="display:flex;align-items:center;margin:4px 0;">
+        <div style="width:20px;height:14px;margin-right:8px;border:1px solid rgba(0,0,0,0.2);border-radius:3px;flex-shrink:0;background:${hex};"></div>
+        <span style="font-size:12px;color:#333;font-weight:600;">${legendLabels[i]}</span>
+      </div>
+    `).join("");
     div.innerHTML = `
-      <h4>Densidad comercial</h4>
-      <div class="map-legend-item">
-        <div class="map-legend-color" style="background-color: #d32f2f; opacity: 0.7;"></div>
-        <span>Muy alta</span>
-      </div>
-      <div class="map-legend-item">
-        <div class="map-legend-color" style="background-color: #ff6b35; opacity: 0.6;"></div>
-        <span>Alta</span>
-      </div>
-      <div class="map-legend-item">
-        <div class="map-legend-color" style="background-color: #ffb74d; opacity: 0.4;"></div>
-        <span>Media</span>
-      </div>
+      <h4 style="margin:0 0 8px;font-size:14px;font-weight:700;color:#222;padding-bottom:4px;border-bottom:2px solid #ff6b35;">Densidad comercial</h4>
+      ${items}
+      <p style="font-size:11px;color:#666;margin:8px 0 0;padding-top:6px;border-top:1px solid #eee;">Cuadrícula 500 m. 8 cuantiles.</p>
     `;
     return div;
   };
@@ -471,27 +533,37 @@ if (hasGrid500m) {
 
 ## Hallazgos clave
 
+```js
+// Hallazgos desde datos: prioritarios, retail, mayoreo, categoriasPrioritarias (denue_hermosillo_categorias_scian)
+const pctRetail = prioritarios > 0 ? ((retail / prioritarios) * 100).toFixed(1) : "0";
+const pctMayoreo = prioritarios > 0 ? ((mayoreo / prioritarios) * 100).toFixed(1) : "0";
+const topRamas = (categoriasPrioritarias || []).slice(0, 5).map(d => `${SCIAN_NOMBRES[d.scian_rama] || d.scian_rama} (${d.scian_rama}): ${formatNumber(d.n_prioritarios)}`).join("; ");
+const scoresPorRama = (categoriasPrioritarias || []).filter(d => d.score_fit_promedio != null).sort((a, b) => (b.score_fit_promedio || 0) - (a.score_fit_promedio || 0)).slice(0, 4);
+
+display(html`
 <div class="grid grid-cols-2">
   <div class="card">
-    <h3>Polarización comercial</h3>
-    <p>La oferta comercial se concentra en corredores principales (Blvd. Solidaridad, zona de abastos, ejes céntricos). Mayor densidad de farmacias y conveniencia en zonas residenciales consolidadas.</p>
+    <h3>Peso del canal retail</h3>
+    <p>De los ${formatNumber(prioritarios)} establecimientos prioritarios en Hermosillo, ${formatNumber(retail)} son retail (${pctRetail}%) y ${formatNumber(mayoreo)} mayoreo (${pctMayoreo}%). ${topRamas || "Cifras por categoría desde denue_hermosillo_categorias_scian.web.csv."} Priorizar rutas y surtido por volumen retail; mayoreo como canal estratégico con pocos actores.</p>
   </div>
   <div class="card">
-    <h3>Hotspots por segmento</h3>
-    <p>Farmacias: dispersión uniforme en toda la mancha urbana. Conveniencia: corredores vehiculares. Abarrotes: colonias populares y tradicionales. Mayoreo: concentrado en zona de abastos.</p>
+    <h3>Score fit por canal</h3>
+    <p>${scoresPorRama.length ? scoresPorRama.map(d => `${SCIAN_NOMBRES[d.scian_rama] || d.scian_rama} (${d.scian_rama}): ${Number(d.score_fit_promedio).toFixed(1)}`).join(". ") + ". Usar estos rangos para ordenar visitas y asignar metas de conversión por tipo de punto." : "Scores fit promedio por rama SCIAN desde denue_hermosillo_categorias_scian.web.csv. Usar para ordenar visitas y metas de conversión por tipo de punto."}</p>
   </div>
   <div class="card">
-    <h3>Oportunidades de penetración</h3>
-    <p>Zonas periféricas con densidad media-alta y baja saturación de competencia. Corredores emergentes en expansión urbana norte y este.</p>
+    <h3>Densidad y cobertura</h3>
+    <p>La cuadrícula de 500 m muestra concentración de densidad comercial en el núcleo urbano de Hermosillo; periferia y zonas fuera del área de estudio aparecen con densidad baja o sin datos. Cruzar con isócronas de CEDIS e islas de calor del mapa permite identificar huecos de cobertura y corredores de expansión.</p>
   </div>
   <div class="card">
-    <h3>Estrategia diferenciada</h3>
-    <p>Mayoreo: enfoque relacional en zona de abastos. Farmacias: disponibilidad de todos los sabores como diferenciador. Conveniencia: rapidez de surtido y servicio local.</p>
+    <h3>Acciones recomendadas</h3>
+    <p>Retail: abasto frecuente y surtido completo (sabores, formatos) en abarrotes y farmacias de mayor score. Mayoreo: relación directa con los ${formatNumber(mayoreo)} distribuidores identificados y presencia en zona de abastos. Validar con datos de venta real y conversión por ruta.</p>
   </div>
 </div>
+`);
+```
 
 ---
 
 <small style="color: var(--theme-foreground-muted);">
-  Análisis basado en DENUE y cuadrícula de 500m. Actualizar con datos de campo y conversión real.
+  Actualizar con datos de campo y conversión real.
 </small>

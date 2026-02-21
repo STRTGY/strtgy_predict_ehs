@@ -4,7 +4,7 @@ toc: true
 ---
 
 ```js
-import {sectionHeader, decisionCallout, implicationsCallout, certaintyBadge} from "./components/brand.js";
+import {sectionHeader, decisionCallout, implicationsCallout} from "./components/brand.js";
 import {formatNumber} from "./components/ui.js";
 
 const catalog = await FileAttachment("data/catalog.json").json();
@@ -13,8 +13,7 @@ const catalog = await FileAttachment("data/catalog.json").json();
 ```js
 display(sectionHeader({
   title: "Datos y Metodología",
-  subtitle: "Fuentes oficiales, pipeline de integración y criterios de calidad de datos",
-  certainty: "high"
+  subtitle: "Fuentes oficiales, pipeline de integración y criterios de calidad de datos"
 }));
 ```
 
@@ -42,8 +41,8 @@ display(decisionCallout({
 *Directorio Nacional de Unidades Económicas*
 
 <div style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); border-radius: 8px; padding: 1rem; margin: 1rem 0; text-align: center;">
-  <div style="font-size: 1.75rem; font-weight: 700; color: #1565c0;">~12,000</div>
-  <div style="font-size: 0.875rem; color: #666;">establecimientos registrados</div>
+  <div style="font-size: 1.75rem; font-weight: 700; color: #1565c0;">38,683</div>
+  <div style="font-size: 0.875rem; color: #666;">establecimientos en Hermosillo (4,240 prioritarios para Electrolit)</div>
 </div>
 
 **📋 Campos utilizados:**
@@ -61,7 +60,7 @@ display(decisionCallout({
 *Sistema de Información Censal*
 
 <div style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); border-radius: 8px; padding: 1rem; margin: 1rem 0; text-align: center;">
-  <div style="font-size: 1.75rem; font-weight: 700; color: #1565c0;">673</div>
+  <div style="font-size: 1.75rem; font-weight: 700; color: #1565c0;">575</div>
   <div style="font-size: 0.875rem; color: #666;">AGEBs urbanas</div>
 </div>
 
@@ -244,7 +243,7 @@ Score = Σ(Variable<sub>norm</sub> × Peso)
 
 ## 2.3. Métricas de Calidad de Datos
 
-Las cifras siguientes son **referenciales** y pueden variar según el conjunto de datos y la ejecución actual del pipeline.
+Las cifras siguientes son **referenciales (no derivadas de los datos actuales del reporte)**. Las métricas de calidad se obtienen en el procesamiento fuente; en este reporte se asume que los datos en `src/data` son la versión validada.
 
 <div class="grid grid-cols-4" style="gap: 1rem; margin: 2rem 0;">
 
@@ -270,13 +269,6 @@ Las cifras siguientes son **referenciales** y pueden variar según el conjunto d
 
 </div>
 
-**Detalles por métrica:**
-
-- **Tasa de validez (97.8%):** 11,736 registros válidos de 12,000 totales que pasaron todos los controles de calidad
-- **Completitud (95.2%):** Campos clave sin valores faltantes en 95.2% de los registros
-- **Precisión geográfica (98.3%):** Coordenadas dentro de límites municipales válidos
-- **Duplicados removidos (0.8%):** ~100 registros eliminados por duplicación exacta de coordenadas/nombre
-
 ---
 
 ## 2.4. Criterios de Filtrado y Segmentación
@@ -285,12 +277,12 @@ Las cifras siguientes son **referenciales** y pueden variar según el conjunto d
 
 Los códigos SCIAN se definen en la configuración del proyecto (`electrolit_hermosillo.yaml`) y se aplican en el Step 02 (DENUE commercial). Se distinguen dos conceptos:
 
-- **Códigos prioritarios (`scian_electrolit`):** Los 9 códigos con los que se construye el scoring y la priorización de establecimientos en este reporte. Son la fuente de la tabla de categorías y del conteo de establecimientos "prioritarios" en mapas y analítico. No incluyen 463xxx (en INEGI, 463xxx corresponde a comercio al por menor, no mayoreo).
+- **Códigos prioritarios (`scian_electrolit`):** Los 21 códigos SCIAN prioritarios con los que se construye el scoring y la priorización de establecimientos en este reporte. Son la fuente de la tabla de categorías y del conteo de establecimientos "prioritarios" en mapas y analítico. No incluyen 463xxx (en INEGI, 463xxx corresponde a comercio al por menor, no mayoreo).
 - **Industrias foco (`industrias_foco`):** Conjunto más amplio en la configuración que incluye además HORECA, gimnasios, hoteles y gasolineras para filtrado DENUE o análisis complementario; el reporte y los rankings se basan en los **prioritarios**.
 
 <div style="margin: 2rem 0;">
 
-#### Códigos prioritarios (scian_electrolit) — 9 códigos
+#### Códigos prioritarios (scian_electrolit) — 21 códigos (principales listados)
 
 **Mayoreo (rama 43):**
 - `431110` — Comercio al por mayor de abarrotes

@@ -10,8 +10,7 @@ import {sectionHeader} from "./components/brand.js";
 ```js
 display(sectionHeader({
   title: "Anexos y Diccionario de Datos",
-  subtitle: "Glosario técnico, referencias metodológicas y fuentes de información",
-  certainty: "high"
+  subtitle: "Glosario técnico, referencias metodológicas y fuentes de información"
 }));
 ```
 
@@ -122,7 +121,7 @@ Formato de archivo geoespacial comprimido, más ligero que GeoJSON. Usado para p
 
 ## Diccionario de Campos (Datasets)
 
-Los nombres y tipos siguientes coinciden con **catalog.json** y con los archivos `.web.geojson` / `.web.csv` generados por el pipeline Midmen (Step 05). La lista completa de columnas por dataset está en `data/catalog.json`.
+Los nombres y tipos siguientes coinciden con los archivos `.web.geojson` y `.web.csv` incluidos en este reporte. La lista completa de columnas por dataset se mantiene en el catálogo de datos del proyecto.
 
 ### Top 400 Establecimientos (`top400.web.geojson`)
 
@@ -130,7 +129,7 @@ Derivado de `establecimientos_scored.web.geojson` (top 400 por `score_total`). P
 
 | Campo | Tipo | Descripción | Ejemplo |
 |-------|------|-------------|---------|
-| `nombre` | string | Nombre del establecimiento (alias añadido en Step 05) | "OXXO Santa Fe" |
+| `nombre` | string | Nombre del establecimiento (alias para uso en reportes) | "OXXO Santa Fe" |
 | `nom_estab` | string | Nombre en fuente DENUE | "OXXO Santa Fe" |
 | `scian_6dig` | string | Código SCIAN 6 dígitos | "461110" |
 | `scian_rama` | string | Rama SCIAN | "Comercio al por menor" |
@@ -140,11 +139,11 @@ Derivado de `establecimientos_scored.web.geojson` (top 400 por `score_total`). P
 | `es_prioritario` | boolean | Indica si entra en criterio SCIAN prioritario | true |
 | `geometry` | Point | Coordenadas WGS84 (GeoJSON) | {...} |
 
-Otros campos en el archivo: `score_margen`, `score_accesibilidad`, `score_competencia`, `perfil_cliente`, `score_fit`, `tiene_telefono`, `tiene_correo`, `tiene_web`, `score_contactabilidad`, `score_antiguedad`, `score_total_raw`, etc. Ver **catalog.json** → `establecimientos_scored` para la lista completa.
+Otros campos en el archivo: `score_margen`, `score_accesibilidad`, `score_competencia`, `perfil_cliente`, `score_fit`, `tiene_telefono`, `tiene_correo`, `tiene_web`, `score_contactabilidad`, `score_antiguedad`, `score_total_raw`, etc. La lista completa de columnas está en el catálogo de datos (establecimientos_scored).
 
 ### Establecimientos Scored (`establecimientos_scored.web.geojson`)
 
-Capa completa de establecimientos puntuados. Mismas columnas que Top 400 (incluye `nombre` añadido en Step 05). Usado para dashboard y mapas cuando se requiere el conjunto completo.
+Capa completa de establecimientos puntuados. El total de registros coincide con las métricas del reporte (prioritarios evaluados). Mismas columnas que Top 400 (incluye campo `nombre`). Usado para dashboard y mapas cuando se requiere el conjunto completo.
 
 ### AGEBs Base (`agebs_base.web.geojson`)
 
@@ -160,7 +159,7 @@ Polígonos de AGEBs urbanas con variables SCINCE 2020. Más de 3 400 columnas; p
 | `HOGAR*`, `DISC*`, `INDI*`, `MIG*` | number | Hogar, discapacidad, indígena, migración | — |
 | `geometry` | Polygon | Polígono del AGEB (WGS84) | {...} |
 
-Lista completa de columnas: **catalog.json** → `agebs_base` (más de 3 400 variables).
+Lista completa de columnas: catálogo `agebs_base` (más de 3 400 variables).
 
 ### Zonas de Oportunidad (`zonas_oportunidad.web.geojson`)
 
@@ -188,11 +187,11 @@ Estructura de propiedades idéntica a **agebs_base** (mismas columnas SCINCE). N
 | `coverage_5min`, `coverage_10min` | float | Cobertura (p. ej. fracción del Top 400) en 5 y 10 min |
 | `score_adjusted` | float | Score ajustado por cobertura |
 
-**`top10_cedis.web.csv`** es la fusión de ambos por `ranking`; columnas resultantes según Step 05: las de **top10_hubs** más las de **top10_logistica** (sin duplicar `ranking`, `lat`, `lon`, `score`). Si el CSV generado usa otros nombres (p. ej. `rank`, `latitude`, `longitude`, `customers_5km`), consultar el encabezado del archivo o **catalog.json** → `top10_cedis`.
+**`top10_cedis.web.csv`** es la fusión de ambos por `ranking`: columnas de **top10_hubs** más las de **top10_logistica** (sin duplicar `ranking`, `lat`, `lon`, `score`). Si el archivo usa otros nombres de columna, consultar el encabezado del CSV o el catálogo `top10_cedis`.
 
 ### Isócronas
 
-**`hub_isochrones.web.geojson`** (polígonos por CEDIS; origen: Step 03 `cedis_isochrones`):
+**`hub_isochrones.web.geojson`** (polígonos por CEDIS):
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
@@ -205,7 +204,7 @@ Estructura de propiedades idéntica a **agebs_base** (mismas columnas SCINCE). N
 | `departure_time` | string | Hora de salida (opcional) |
 | `geometry` | Polygon | Polígono de la isócrona (WGS84) |
 
-**`isocronas_5_10_15.web.geojson`** (Step 04; incluye negocio y origen):
+**`isocronas_5_10_15.web.geojson`** (incluye negocio y origen):
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
@@ -218,7 +217,7 @@ Estructura de propiedades idéntica a **agebs_base** (mismas columnas SCINCE). N
 
 ### Top 20 Comercial (`top20_comercial.web.csv`)
 
-Top 20 establecimientos por `score_total`. Columnas típicas: `lon`, `lat`, `nombre`, `nom_estab` (y las que Step 05 incluya del GeoJSON de establecimientos). Ver **catalog.json** → `top20_comercial` si existe.
+Top 20 establecimientos por `score_total`. Columnas típicas: `lon`, `lat`, `nombre`, `nom_estab` y las del GeoJSON de establecimientos. Ver catálogo `top20_comercial` para la lista completa.
 
 ### DENUE Categorías SCIAN (`denue_hermosillo_categorias_scian.web.csv`)
 
@@ -232,7 +231,7 @@ Top 20 establecimientos por `score_total`. Columnas típicas: `lon`, `lat`, `nom
 
 ### Sweet Spots (`sweetspot_top10.web.geojson`, `sweetspot_top10_v2.web.geojson`)
 
-Top 10 candidatos CEDIS desde `cedis_candidates.geojson`. Propiedades: mismas que **puntos_candidatos_cedis** (p. ej. `CVEGEO`, scores de cobertura y centralidad). Ver **catalog.json** → `sweetspot_top10` o `puntos_candidatos_cedis` para columnas completas.
+Top 10 candidatos CEDIS. Propiedades: mismas que **puntos_candidatos_cedis** (p. ej. `CVEGEO`, scores de cobertura y centralidad). Ver catálogo `sweetspot_top10` o `puntos_candidatos_cedis` para columnas completas.
 
 ---
 
@@ -275,24 +274,22 @@ Top 10 candidatos CEDIS desde `cedis_candidates.geojson`. Propiedades: mismas qu
 
 - **QGIS 3.34** — Validación de geoprocesamiento y generación de mapas estáticos
 
-### Pipeline de Procesamiento (Resumen)
+### Procesamiento de Datos (Resumen)
 
 1. **Extracción**
-   - Descarga de DENUE vía API de INEGI (REST)
-   - Descarga de shapefiles de AGEBs desde SCINCE
+   - DENUE vía API de INEGI (REST)
+   - Shapefiles de AGEBs desde SCINCE
    - Consolidación de índices de marginación y NSE
 
 2. **Transformación**
-   - Join espacial: establecimientos → AGEBs
-   - Cálculo de densidades comerciales por AGEB y por sector SCIAN
+   - Join espacial: establecimientos a AGEBs
+   - Densidades comerciales por AGEB y sector SCIAN
    - Normalización de variables a escala [0–100]
-   - Cálculo de score ponderado multi-criterio
-   - Asignación de deciles
+   - Score ponderado multi-criterio y asignación de deciles
 
-3. **Carga**
-   - Exportación a GeoJSON/CSV optimizados (<5 MB por archivo)
-   - Generación de samples para visualización web
-   - Despliegue en Observable Framework
+3. **Salida**
+   - Exportación a GeoJSON/CSV optimizados para uso en CRM y mapas
+   - Despliegue en el reporte interactivo
 
 ### Supuestos y Limitaciones del Modelo
 
@@ -349,13 +346,8 @@ Top 10 candidatos CEDIS desde `cedis_candidates.geojson`. Propiedades: mismas qu
 
 **STRTGY** — Transformando complejidad en certeza
 
-**Project Manager:**  
-[Nombre del PM]  
-[email@strtgy.ai](mailto:email@strtgy.ai)
-
-**Equipo Técnico (Geointelligence):**  
-[Nombre del Lead Técnico]  
-[tecnico@strtgy.ai](mailto:tecnico@strtgy.ai)
+**Contacto:**  
+[hola@strtgy.ai](mailto:hola@strtgy.ai)
 
 **Sitio Web:**  
 [https://www.strtgy.ai](https://www.strtgy.ai)
@@ -363,16 +355,16 @@ Top 10 candidatos CEDIS desde `cedis_candidates.geojson`. Propiedades: mismas qu
 ---
 
 <div class="note" style="background: #e8f5e9; border-left: 4px solid #4caf50; padding: 1rem;">
-  <p style="margin: 0; font-weight: 600;">✅ Fin del Reporte</p>
+  <p style="margin: 0; font-weight: 600;">Fin del Reporte</p>
   <p style="margin: 0.5rem 0 0 0;">
     Has completado la revisión del análisis de priorización para Electrolit en Hermosillo. 
-    Para comenzar la implementación, dirígete al <a href="./dashboard">Dashboard Interactivo</a> 
-    o descarga los datasets desde <a href="./descargas">Descargas</a>.
+    Para comenzar la implementación, dirígete al <a href="./dashboard">Dashboard Interactivo</a>. 
+    Para acceso a los datasets priorizados (CSV/GeoJSON), escríbenos a [hola@strtgy.ai](mailto:hola@strtgy.ai).
   </p>
 </div>
 
 ---
 
 <small style="color: #999; text-align: center; display: block; margin-top: 2rem;">
-  **STRTGY Predict** | Electrolit Hermosillo | Proyecto entregado en Octubre 2025
+  <strong>STRTGY Predict</strong> | Electrolit Hermosillo | Proyecto entregado en Octubre 2025
 </small>

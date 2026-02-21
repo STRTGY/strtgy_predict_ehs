@@ -50,7 +50,6 @@ export default {
       pages: [
         { name: "🚚 Hubs Logísticos", path: "/mapas/hubs" },
         { name: "⏱️ Isócronas", path: "/mapas/isocronas" },
-        { name: "💰 Puntos de Venta", path: "/mapas/puntos-venta" },
         { name: "⭐ Sweet Spots", path: "/mapas/sweet-spots" }
       ]
     },
@@ -60,7 +59,8 @@ export default {
         { name: "📊 Competencia", path: "/analitica/competencia" }
       ]
     },
-    { name: "📥 Descargas", path: "/descargas" },
+    // Descargas oculta por el momento; descomentar para mostrar en sidebar:
+    // { name: "Descargas", path: "/descargas" },
     {
       name: "Anexos y Diccionario",
       path: "/anexos"

@@ -88,8 +88,7 @@ const top10hubsSorted = [...top10hubs].sort((a, b) => b.score_adjusted - a.score
 ```js
 display(sectionHeader({
   title: "Top 10 Ubicaciones Óptimas para Hub Logístico (CEDIS)",
-  subtitle: "Análisis espacial de cobertura y accesibilidad para centro de distribución",
-  certainty: "medium"
+  subtitle: "Análisis espacial de cobertura y accesibilidad para centro de distribución"
 }));
 ```
 
@@ -591,5 +590,5 @@ display(implicationsCallout({
 ---
 
 <small style="color: #999;">
-  **Ver también:** <a href="../logistica-sonora">6) Logística y Sonora</a> | <a href="../dashboard">7) Dashboard</a>
+  <strong>Ver también:</strong> <a href="../logistica-sonora">6) Logística y Sonora</a> | <a href="../dashboard">7) Dashboard</a>
 </small>

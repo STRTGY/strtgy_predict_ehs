@@ -2,8 +2,10 @@
 
 **Date:** 2026-02-19  
 **Processed dir:** `data/processed/midmen`  
-**Report data dir:** `reports/strtgy_predict_midmen_electrolit_hermosillo/src/data`  
+**Report data dir:** `src/data` (en este repositorio; anteriormente `reports/strtgy_predict_midmen_electrolit_hermosillo/src/data`)  
 **Pipeline:** B2B distribution (Electrolit Hermosillo). CRS: analysis EPSG:6372; report/export EPSG:4326.
+
+**Nota:** Este documento refleja la auditoría sobre los datos actuales en `src/data`. Los conteos (p. ej. establecimientos prioritarios) corresponden a los archivos en este repositorio; no se re-ejecutan scripts que dependan del pipeline.
 
 ---
 
@@ -12,7 +14,7 @@
 - **PASS**: No errors from `validate_report_data_dir`.
   - All root-level `.geojson` and `.web.geojson` in report data dir have CRS EPSG:4326.
   - `catalog.json` has non-empty `columns` for `top10_hubs` and `top10_logistica`.
-  - `metrics.json` vs `denue_hermosillo_metadata.json`: `priority_establishments` (4,823) ≤ `total_establishments` (38,683); `total_establecimientos` is numeric (4,823).
+  - `metrics.json` vs `denue_hermosillo_metadata.json`: `priority_establishments` (4,240) ≤ `total_establishments` (38,683); `total_establecimientos` is numeric (4,240).
 
 ---
 
@@ -61,8 +63,8 @@
 - **PASS**: No schema or count issues.
   - **top10_hubs.csv**, **top10_logistica.csv** (processed): present, non-empty, with expected columns (e.g. ranking, lat, lon, score).
   - **top10_hubs.web.csv**, **top10_logistica.web.csv** (report): referenced in catalog with non-empty columns; files exist.
-  - **metrics.json**: structure present; `total_establecimientos` numeric (4,823).
-  - **denue_metadata.json** / **denue_hermosillo_metadata.json**: priority_establishments (4,823) ≤ total_establishments (38,683).
+  - **metrics.json**: structure present; `total_establecimientos` numeric (4,240).
+  - **denue_metadata.json** / **denue_hermosillo_metadata.json**: priority_establishments (4,240) ≤ total_establishments (38,683).
 
 ---
 
@@ -94,7 +96,7 @@ Or run the existing validator only:
 ```python
 from pathlib import Path
 from scripts.midmen.utils.validate_report_data import validate_report_data_dir
-errors = validate_report_data_dir(Path('reports/strtgy_predict_midmen_electrolit_hermosillo/src/data'))
+errors = validate_report_data_dir(Path('src/data'))
 # errors empty => pass
 ```
 

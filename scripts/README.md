@@ -4,6 +4,59 @@ Este directorio contiene scripts para generar y procesar los archivos de datos o
 
 ## Scripts Disponibles
 
+### `agebs_scores_from_establishments.py` (Python)
+
+**Propósito:** Actualiza el GeoJSON de AGEBs con conteo de establecimientos (spatial join: punto en polígono) y un score 0–10 derivado de ese conteo. No modifica el proyecto Observable; solo escribe el archivo de datos. La vista Exploración Territorial usa este archivo cuando existe.
+
+**Dependencia:** `geopandas`, `shapely` (`pip install geopandas shapely`)
+
+**Fuentes (por defecto):**
+- `src/data/agebs_base.web.geojson`
+- `src/data/establecimientos_scored.web.geojson`
+
+**Propiedades añadidas por AGEB:**
+- `n_establecimientos`: número de establecimientos cuyo punto cae dentro del polígono
+- `score_estab_0_10`: score 1–10 según percentil del conteo (más establecimientos = mayor score)
+- `pob_total`: suma de columnas POB* SCINCE
+
+**Uso:**
+```bash
+python scripts/agebs_scores_from_establishments.py
+```
+
+**Opciones:** `--agebs`, `--establecimientos`, `--out`, `--shapefile` (exportar también ESRI Shapefile).
+
+**Salida:**
+- GeoJSON: `src/data/agebs_con_scores_establecimientos.web.geojson`
+- Shapefile (opcional): mismo nombre base que `--out`, con extensión `.shp`
+
+---
+
+### `agebs_with_establishment_scores.js`
+
+**Propósito:** Genera un GeoJSON de AGEBs con conteo y scores derivados de establecimientos (spatial join: punto en polígono). Cada polígono queda con `n_establecimientos`, `score_suma_estab`, `score_promedio_estab`, `score_estab_0_10` y `pob_total`. La vista Exploración Territorial usa este archivo cuando existe.
+
+**Fuentes:** `src/data/agebs_base.web.geojson`, `src/data/scored.sample.web.geojson`
+
+**Propiedades añadidas por AGEB:**
+- `n_establecimientos`: número de establecimientos cuyo punto cae dentro del polígono
+- `score_suma_estab`: suma de `score_total` de esos establecimientos
+- `score_promedio_estab`: promedio de score
+- `score_estab_0_10`: score normalizado 0–10 según aporte relativo de scores
+- `pob_total`: población total (suma de columnas POB* SCINCE)
+
+**Uso:**
+```bash
+node scripts/agebs_with_establishment_scores.js
+```
+
+**Salida:**
+- Archivo: `src/data/agebs_con_scores_establecimientos.web.geojson`
+
+**Exportar a Shapefile:** Usar el script Python con `--shapefile` o desde la raíz: `npx mapshaper -i src/data/agebs_con_scores_establecimientos.web.geojson -o format=shapefile agebs_scores.shp`
+
+---
+
 ### `generate_grid_suitability_web.py`
 
 **Propósito:** Genera el archivo `src/data/grid_suitability.web.geojson` con todas las propiedades necesarias para la visualización del análisis de idoneidad de ubicación de centro de distribución.

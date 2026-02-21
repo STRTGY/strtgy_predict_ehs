@@ -6,11 +6,11 @@
   "private": false,
   "scripts": {
     "clean": "rimraf src/.observablehq/cache dist",
-    "dev": "observable preview",
-    "build": "observable build",
-    "preview": "observable preview --no-open",
-    "deploy": "observable deploy",
-    "observable": "observable",
+    "dev": "npx observable preview",
+    "build": "npx observable build",
+    "preview": "npx observable preview --no-open",
+    "deploy": "npx observable deploy",
+    "observable": "npx observable",
     "prebuild": "npm run clean"
   },
   "dependencies": {

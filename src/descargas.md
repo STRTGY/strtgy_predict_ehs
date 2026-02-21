@@ -1,5 +1,5 @@
 ---
-title: 📥 Descargas
+title: Descargas
 toc: false
 ---
 
@@ -10,8 +10,7 @@ import {sectionHeader} from "./components/brand.js";
 ```js
 display(sectionHeader({
   title: "Descargas y Exportación de Datos",
-  subtitle: "Acceso directo a datasets priorizados para integración con CRM y herramientas de ruteo",
-  certainty: "high"
+  subtitle: "Acceso directo a datasets priorizados para integración con CRM y herramientas de ruteo"
 }));
 ```
 
@@ -21,13 +20,13 @@ display(sectionHeader({
 
 <div class="grid grid-cols-2">
   <div class="card">
-    <h3>🎯 Top 400 Establecimientos (GeoJSON)</h3>
+    <h3>Top 400 Establecimientos (GeoJSON)</h3>
     <p style="color: #666; font-size: 0.9rem;">
       Lista priorizada con scoring, segmento, ubicación y metadatos. Formato GeoJSON para importar en QGIS, Google Maps, Mapbox.
     </p>
     <ul style="font-size: 0.9rem; color: #666;">
-      <li><strong>Registros:</strong> hasta 400 establecimientos (según pipeline)</li>
-      <li><strong>Campos clave:</strong> nombre/nom_estab, score_total, decil, segmento, colonia, direccion, lat, lon (lista completa en catalog.json)</li>
+      <li><strong>Registros:</strong> hasta 400 establecimientos priorizados</li>
+      <li><strong>Campos clave:</strong> nombre/nom_estab, score_total, decil, segmento, colonia, direccion, lat, lon (lista completa en Anexos)</li>
       <li><strong>Uso:</strong> Mapas interactivos, análisis espacial</li>
     </ul>
     <a href="./data/top400.web.geojson" download style="
@@ -43,13 +42,13 @@ display(sectionHeader({
   </div>
   
   <div class="card">
-    <h3>📊 Top 400 Establecimientos (CSV)</h3>
+    <h3>Top 400 Establecimientos (CSV)</h3>
     <p style="color: #666; font-size: 0.9rem;">
-      Mismos datos que el Top 400 GeoJSON en formato CSV tabular para importar en Excel, CRM (Salesforce, HubSpot), ERP o bases de datos. Generado por el pipeline (Step 05).
+      Mismos datos que el Top 400 GeoJSON en formato CSV tabular para importar en Excel, CRM (Salesforce, HubSpot), ERP o bases de datos.
     </p>
     <ul style="font-size: 0.9rem; color: #666;">
       <li><strong>Registros:</strong> hasta 400 establecimientos</li>
-      <li><strong>Campos:</strong> mismos que GeoJSON (nombre, score_total, decil, segmento, colonia, direccion, lat, lon, etc.); ver catalog.json</li>
+      <li><strong>Campos:</strong> mismos que GeoJSON (nombre, score_total, decil, segmento, colonia, direccion, lat, lon, etc.); ver Anexos</li>
       <li><strong>Formato:</strong> UTF-8, delimitado por comas</li>
       <li><strong>Uso:</strong> CRM, reporting, análisis en Excel/Python</li>
     </ul>
@@ -66,14 +65,14 @@ display(sectionHeader({
   </div>
   
   <div class="card">
-    <h3>🚚 Top 10 Hubs Logísticos (CSV)</h3>
+    <h3>Top 10 Hubs Logísticos (CSV)</h3>
     <p style="color: #666; font-size: 0.9rem;">
-      Ubicaciones óptimas para CEDIS con métricas de cobertura, tiempo promedio y score logístico.
+      Detalle de las 10 ubicaciones candidatas con métricas de cobertura (ej. establecimientos en 30 min), tiempo promedio y score logístico. Complementa al Top 10 CEDIS con indicadores operativos.
     </p>
     <ul style="font-size: 0.9rem; color: #666;">
       <li><strong>Registros:</strong> 10 ubicaciones</li>
       <li><strong>Campos:</strong> ranking, nombre, lat, lon, cobertura_30min, tiempo_prom_min, score_logistico</li>
-      <li><strong>Uso:</strong> Evaluación de ubicación de CEDIS</li>
+      <li><strong>Uso:</strong> Análisis detallado de cobertura; comparar con Top 10 CEDIS para decisión final</li>
     </ul>
     <a href="./data/top10_hubs.web.csv" download style="
       display: inline-block;
@@ -88,7 +87,7 @@ display(sectionHeader({
   </div>
   
   <div class="card">
-    <h3>⭐ Sweet Spots (GeoJSON)</h3>
+    <h3>Sweet Spots (GeoJSON)</h3>
     <p style="color: #666; font-size: 0.9rem;">
       Top 10 zonas de alta concentración comercial + accesibilidad logística óptima.
     </p>
@@ -110,7 +109,7 @@ display(sectionHeader({
   </div>
   
   <div class="card">
-    <h3>🗺️ AGEBs Base (GeoJSON)</h3>
+    <h3>AGEBs Base (GeoJSON)</h3>
     <p style="color: #666; font-size: 0.9rem;">
       Polígonos de AGEBs de Hermosillo con datos demográficos SCINCE 2020.
     </p>
@@ -132,9 +131,9 @@ display(sectionHeader({
   </div>
   
   <div class="card">
-    <h3>🚚 Top 10 CEDIS (CSV)</h3>
+    <h3>Top 10 CEDIS (CSV)</h3>
     <p style="color: #666; font-size: 0.9rem;">
-      Ubicaciones óptimas para CEDIS con métricas de cobertura (merge de top10_hubs y top10_logistica).
+      Ranking unificado de las 10 mejores ubicaciones candidatas para CEDIS, combinando cobertura de demanda y criterios logísticos.
     </p>
     <ul style="font-size: 0.9rem; color: #666;">
       <li><strong>Registros:</strong> 10 ubicaciones</li>
@@ -154,14 +153,14 @@ display(sectionHeader({
   </div>
   
   <div class="card">
-    <h3>📊 Muestra Scored (GeoJSON)</h3>
+    <h3>Capa de Establecimientos Scored (GeoJSON)</h3>
     <p style="color: #666; font-size: 0.9rem;">
-      Muestra de establecimientos con scoring para mapas y análisis espacial (fallback DENUE en loaders).
+      Capa ampliada de establecimientos con scoring para mapas y análisis espacial; complementa el Top 400 cuando se requiere mayor cobertura territorial.
     </p>
     <ul style="font-size: 0.9rem; color: #666;">
-      <li><strong>Registros:</strong> ~1000 establecimientos</li>
+      <li><strong>Registros:</strong> aproximadamente 1000 establecimientos</li>
       <li><strong>Campos:</strong> nom_estab, segmento, score, coordenadas</li>
-      <li><strong>Uso:</strong> Capa de establecimientos en mapas</li>
+      <li><strong>Uso:</strong> Capa de establecimientos en mapas, análisis de contexto</li>
     </ul>
     <a href="./data/scored.sample.web.geojson" download style="
       display: inline-block;
@@ -176,7 +175,7 @@ display(sectionHeader({
   </div>
   
   <div class="card">
-    <h3>📋 Top 20 Comercial (CSV)</h3>
+    <h3>Top 20 Comercial (CSV)</h3>
     <p style="color: #666; font-size: 0.9rem;">
       Lista reducida de los 20 establecimientos de máxima prioridad para prospección inmediata.
     </p>
@@ -198,7 +197,7 @@ display(sectionHeader({
   </div>
   
   <div class="card">
-    <h3>⏱️ Isócronas de Cobertura (GeoJSON)</h3>
+    <h3>Isócronas de Cobertura (GeoJSON)</h3>
     <p style="color: #666; font-size: 0.9rem;">
       Polígonos de isócronas de 5, 10 y 15 minutos desde ubicaciones candidatas de CEDIS.
     </p>
@@ -220,7 +219,7 @@ display(sectionHeader({
   </div>
   
   <div class="card">
-    <h3>📊 Métricas del Análisis (JSON)</h3>
+    <h3>Métricas del Análisis (JSON)</h3>
     <p style="color: #666; font-size: 0.9rem;">
       Resumen de métricas clave del análisis: totales, promedios, distribuciones.
     </p>
@@ -246,16 +245,7 @@ display(sectionHeader({
 
 ## Catálogo de Datos
 
-```js
-const catalog = await FileAttachment("data/catalog.json").json();
-
-display(html`
-  <div class="card">
-    <h3>Metadata del Catálogo</h3>
-    <pre style="background: #f5f5f5; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.85rem;">${JSON.stringify(catalog, null, 2)}</pre>
-  </div>
-`);
-```
+El archivo `data/catalog.json` contiene la metadata de cada dataset (nombre, descripción, número de registros y columnas). Para la lista completa de campos por archivo y su significado, consulta la sección [Anexos y Diccionario](./anexos). Los nombres de columnas referidos en las guías de integración coinciden con los definidos en ese catálogo.
 
 ---
 
@@ -264,7 +254,7 @@ display(html`
 ### Importar a CRM (Salesforce, HubSpot, Zoho)
 
 1. **Descargar Top 400 en CSV** (archivo `top400.web.csv`)
-2. **Mapear campos** (nombres según catalog.json):
+2. **Mapear campos** (nombres según el catálogo en Anexos):
    - `nombre` o `nom_estab` → Nombre de la Cuenta
    - `direccion` → Dirección
    - `colonia` → Barrio/Distrito
@@ -307,7 +297,7 @@ display(html`
 ## Actualizaciones de Datos
 
 <div class="note" style="background: #e3f2fd; border-left: 4px solid #2196f3; padding: 1rem;">
-  <p style="margin: 0; font-weight: 600;">📅 Frecuencia de Actualización</p>
+  <p style="margin: 0; font-weight: 600;">Frecuencia de Actualización</p>
   <p style="margin: 0.5rem 0 0 0;">
     Los datos de este reporte se basan en fuentes oficiales (INEGI DENUE 2024, SCINCE 2020). 
     **Recomendamos actualizar el análisis cada 6–12 meses** para reflejar:
@@ -318,7 +308,7 @@ display(html`
     <li>Feedback del equipo comercial (conversión real vs. proyectada)</li>
   </ul>
   <p style="margin: 0.5rem 0 0 0;">
-    STRTGY puede proveer actualizaciones automatizadas mediante pipeline de datos configurado.
+    STRTGY puede proveer actualizaciones periódicas del análisis bajo acuerdo con el cliente.
   </p>
 </div>
 
@@ -339,10 +329,10 @@ No. DENUE provee solo nombre, dirección y ubicación. Los datos de contacto deb
 Los datos derivados de fuentes públicas (INEGI) son redistribuibles. Sin embargo, el **modelo de scoring y la priorización son propiedad intelectual de STRTGY** y están sujetos a los términos del contrato de consultoría.
 
 **¿Cómo reporto errores en los datos?**  
-Contacta a tu Project Manager de STRTGY con el detalle del error (CVEGEO o nombre del establecimiento afectado). Validaremos y corregiremos en la próxima actualización.
+Contacta a STRTGY en [hola@strtgy.ai](mailto:hola@strtgy.ai) con el detalle del error (CVEGEO o nombre del establecimiento afectado). Validaremos y corregiremos en la próxima actualización.
 
 ---
 
 <small style="color: #999;">
-  **Ver también:** <a href="./dashboard">7) Dashboard Interactivo</a> | <a href="./anexos">Anexos y Diccionario</a>
+  <strong>Ver también:</strong> <a href="./dashboard">7) Dashboard Interactivo</a> | <a href="./anexos">Anexos y Diccionario</a>
 </small>

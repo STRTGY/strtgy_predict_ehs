@@ -8,63 +8,57 @@ import * as Plot from "npm:@observablehq/plot";
 ```
 
 ```js
-// Cargar datos directamente con FileAttachment
-const agebGeo = await FileAttachment("./data/agebs_base.web.geojson").json();
+// Cargar datos directamente con FileAttachment (totales desde metrics/zonas_oportunidad)
+const metrics = await FileAttachment("./data/metrics.json").json();
+let agebGeo = await FileAttachment("./data/agebs_base.web.geojson").json();
 const zonasOportunidad = await FileAttachment("./data/zonas_oportunidad.web.geojson").json();
 const denue = await FileAttachment("./data/scored.sample.web.geojson").json();
 const top20Comercial = await FileAttachment("./data/top20_comercial.web.csv").csv({typed: true});
+
+// Si existe el GeoJSON con scores por establecimientos (generado por scripts/agebs_with_establishment_scores.js), usarlo
+const agebsConScoresEstab = await FileAttachment("./data/agebs_con_scores_establecimientos.web.geojson").json().catch(() => null);
+if (agebsConScoresEstab?.features?.length) agebGeo = agebsConScoresEstab;
 ```
 
 ```js
-// Crear lookup de datos de zonas de oportunidad (tiene población y scores)
-const zonaDataMap = new Map(
-  zonasOportunidad.features.map(f => [
-    f.properties.CVEGEO,
-    {
-      pob_total: f.properties.pob_total || 0,
-      opportunity_score: f.properties.opportunity_score || 0,
-      avg_score: f.properties.avg_score || 0,
-      n_establecimientos: f.properties.n_establecimientos || 0,
-      oportunidad_tipo: f.properties.oportunidad_tipo || 'normal'
-    }
-  ])
-);
+// scoresAgeb: desde agebs_con_scores_establecimientos (conteo/scores por establecimientos) o derivado de POB*
+const pobKeys = agebGeo.features[0]?.properties
+  ? Object.keys(agebGeo.features[0].properties).filter(k => /^POB\d+$/.test(k) && !k.includes("_R"))
+  : [];
+const sumPobFeature = (f) => pobKeys.reduce((s, k) => s + (Math.max(0, Number(f.properties?.[k]) || 0)), 0);
 
-// Generar scores usando datos reales de zonas de oportunidad
+const useScoresEstab = agebGeo.features.some(f => f.properties?.n_establecimientos != null && f.properties?.score_estab_0_10 != null);
+const pobPorAgeb = agebGeo.features.map(fe => ({ cvegeo: fe.properties.CVEGEO, pob_total: fe.properties?.pob_total ?? sumPobFeature(fe) }));
+const conPob = pobPorAgeb.slice().sort((a, b) => b.pob_total - a.pob_total);
+const cveToRank = new Map(conPob.map((d, i) => [d.cvegeo, conPob.length > 1 ? i / (conPob.length - 1) : 0]));
+
 const scoresAgeb = agebGeo.features.map(f => {
   const cvegeo = f.properties.CVEGEO;
-  const zonaData = zonaDataMap.get(cvegeo);
-  
-  // Calcular score normalizado en escala 0-10 basado en tipo de oportunidad
-  let score = 5.0; // default
-  if (zonaData) {
-    // Usar oportunidad_tipo como indicador principal
-    const tipo = zonaData.oportunidad_tipo?.toLowerCase() || '';
-    
-    if (tipo === 'alta') {
-      // Alta oportunidad: 7.5-9.5
-      const variation = (zonaData.opportunity_score - 25) / (78 - 25); // normalizar 25-78 a 0-1
-      score = 7.5 + (variation * 2); // mapear a 7.5-9.5
-    } else if (tipo === 'media') {
-      // Media oportunidad: 5-7
-      const variation = (zonaData.opportunity_score - 25) / (78 - 25);
-      score = 5 + (variation * 2); // mapear a 5-7
-    } else if (tipo === 'baja') {
-      // Baja oportunidad: 2.5-5
-      const variation = (zonaData.opportunity_score - 25) / (78 - 25);
-      score = 2.5 + (variation * 2.5); // mapear a 2.5-5
-    }
-    
-    // Limitar a rango 1-10
-    score = Math.max(1, Math.min(10, score));
+  const pob_total = f.properties?.pob_total ?? sumPobFeature(f);
+  if (useScoresEstab && f.properties?.score_estab_0_10 != null) {
+    const score = Math.max(1, Math.min(10, Number(f.properties.score_estab_0_10) || 5));
+    let oportunidad_tipo = "baja";
+    if (score >= 8) oportunidad_tipo = "alta";
+    else if (score >= 6) oportunidad_tipo = "media";
+    return {
+      ageb: cvegeo,
+      score: Number(score.toFixed(2)),
+      pob_total,
+      n_establecimientos: f.properties.n_establecimientos ?? 0,
+      oportunidad_tipo
+    };
   }
-  
+  const rank = cveToRank.get(cvegeo) ?? 0.5;
+  let oportunidad_tipo = "baja";
+  if (rank <= 0.2) oportunidad_tipo = "alta";
+  else if (rank <= 0.5) oportunidad_tipo = "media";
+  const score = Math.max(1, Math.min(10, 2.5 + rank * 7));
   return {
     ageb: cvegeo,
     score: Number(score.toFixed(2)),
-    pob_total: zonaData?.pob_total || 0,
-    n_establecimientos: zonaData?.n_establecimientos || 0,
-    oportunidad_tipo: zonaData?.oportunidad_tipo || 'normal'
+    pob_total,
+    n_establecimientos: 0,
+    oportunidad_tipo
   };
 });
 ```
@@ -112,8 +106,9 @@ const zonasInteres = {
 ## Indicadores territoriales
 
 ```js
-const numAgebs = agebGeo.features.length;
-const numEstablecimientos = denue.features.length;
+// Totales desde metrics.json (fuente de verdad); mapa usa muestra de denue para visualización
+const numAgebs = metrics?.counts?.agebs ?? agebGeo.features.length;
+const numEstablecimientos = metrics?.total_establecimientos ?? metrics?.metrics?.total_establishments ?? 0;
 const avgScoreAgeb = (scoresAgeb.reduce((sum, d) => sum + d.score, 0) / scoresAgeb.length).toFixed(2);
 
 display(kpi([
@@ -122,7 +117,7 @@ display(kpi([
     value: formatNumber(numAgebs)
   },
   {
-    label: "Establecimientos mapeados",
+    label: "Establecimientos priorizados",
     value: formatNumber(numEstablecimientos)
   },
   {
@@ -139,7 +134,7 @@ display(kpi([
 ## Mapa interactivo de Hermosillo
 
 <div class="note">
-Visualización de la estructura territorial urbana de Hermosillo. Los polígonos representan AGEBs y los marcadores muestran establecimientos DENUE. Haz clic en los elementos para ver información detallada.
+Visualización de la estructura territorial urbana de Hermosillo. Los polígonos representan AGEBs y los marcadores muestran una muestra de establecimientos priorizados para visualización (total analizado desde <code>metrics.json</code>). Haz clic en los elementos para ver información detallada.
 </div>
 
 ```js
@@ -591,15 +586,22 @@ display(html`<p style="font-size: 0.875rem; color: var(--theme-foreground-muted)
 
 ## Recomendaciones de cobertura
 
-<div class="tip">
+```js
+// Porcentaje de AGEBs de alta prioridad desde datos (scoresAgeb / Patrones espaciales)
+const totalAgebs = scoresAgeb.length;
+const altaPrioridadAgebs = scoresAgeb.filter(d => d.score >= 7).length;
+const pctAlta = totalAgebs > 0 ? ((altaPrioridadAgebs / totalAgebs) * 100).toFixed(0) : 0;
+
+display(html`<div class="tip">
   <p><strong>Estrategia territorial recomendada</strong></p>
   <ol>
-    <li><strong>Fase 1</strong>: Cobertura de AGEBs de alta prioridad (score ≥7) - Aprox. 30-40% del territorio</li>
+    <li><strong>Fase 1</strong>: Cobertura de AGEBs de alta prioridad (score ≥7) — ${pctAlta}% del territorio según análisis actual</li>
     <li><strong>Fase 2</strong>: Expansión a zonas de media prioridad con alto tránsito y accesibilidad</li>
     <li><strong>Fase 3</strong>: Evaluación de zonas periféricas según resultados de fases anteriores</li>
     <li><strong>Monitoreo continuo</strong>: Actualización de scores con datos de conversión real</li>
   </ol>
-</div>
+</div>`);
+```
 
 ---
 

@@ -41,6 +41,12 @@ npm run preview
 
 El sitio estará disponible en <http://localhost:3000>
 
+### Si `npm install` o `npm run dev` fallan
+
+- Comprueba la versión de Node: `node -v` debe ser **18 o superior**. Si tienes Node 14 o 16, instala Node 18 LTS o 20 LTS desde [nodejs.org](https://nodejs.org/).
+- Con [nvm-windows](https://github.com/coreybutler/nvm-windows) puedes usar el archivo `.nvmrc` del proyecto: `nvm install` y `nvm use`.
+- Asegúrate de ejecutar los comandos desde la **raíz del proyecto** (donde está `package.json`).
+
 ## Regenerar datos
 
 Los datos del reporte se generan con el **pipeline unificado** de Midmen Electrolit Hermosillo. La fuente unica de rutas y parametros es la configuracion del proyecto; la salida se escribe en `src/data/` con sufijo `.web` y CRS WGS84.

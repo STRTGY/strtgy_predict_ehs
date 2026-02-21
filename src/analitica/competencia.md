@@ -3,17 +3,67 @@ title: Análisis de Competencia
 toc: true
 ---
 
-# 📊 Análisis de Competencia y Zonas de Oportunidad
+# Análisis de Competencia y Zonas de Oportunidad
 
-Análisis espacial de densidad de competidores y identificación de zonas con alta demanda y baja competencia.
+Análisis espacial de densidad de establecimientos por AGEB e identificación de zonas con alta demanda y menor saturación (oportunidad).
 
 ```js
 import {createMap, addGeoJsonLayer, createLegend} from "../components/MapLeaflet.js";
 ```
 
 ```js
-// Load data
-const zonasOportunidad = await FileAttachment("../data/zonas_oportunidad.web.geojson").json();
+// Fuente principal: AGEBs con scores por establecimientos (script agebs_scores_from_establishments.py).
+// Fallback: zonas_oportunidad (solo CVEGEO + POB*). Propiedades oportunidad_tipo, opportunity_score,
+// n_competitors y pob_total se derivan para alinear con el resto del proyecto.
+const agebsConScores = await FileAttachment("../data/agebs_con_scores_establecimientos.web.geojson").json().catch(() => null);
+const zonasOportunidadRaw = await FileAttachment("../data/zonas_oportunidad.web.geojson").json();
+
+const pobKeys = zonasOportunidadRaw.features[0]?.properties
+  ? Object.keys(zonasOportunidadRaw.features[0].properties).filter(k => /^POB\d+$/.test(k) && !k.includes("_R"))
+  : [];
+const sumPob = (f) => pobKeys.reduce((s, k) => s + (Math.max(0, Number(f.properties?.[k]) || 0)), 0);
+
+const baseFeatures = (agebsConScores?.features?.length ? agebsConScores : zonasOportunidadRaw).features;
+const hasScoreEstab = baseFeatures.some(f => f.properties?.score_estab_0_10 != null);
+const hasNEstab = baseFeatures.some(f => f.properties?.n_establecimientos != null);
+
+// Derivar score 0-100 y tipo de oportunidad
+const withPob = baseFeatures.map(f => ({
+  ...f,
+  properties: {
+    ...f.properties,
+    pob_total: f.properties?.pob_total ?? sumPob(f)
+  }
+}));
+const sortedPob = withPob.slice().sort((a, b) => (b.properties.pob_total || 0) - (a.properties.pob_total || 0));
+const cveToRank = new Map(sortedPob.map((d, i) => [d.properties.CVEGEO, sortedPob.length > 1 ? i / (sortedPob.length - 1) : 0.5]));
+
+const zonasOportunidad = {
+  type: "FeatureCollection",
+  features: withPob.map(f => {
+    const p = f.properties;
+    const opportunity_score = (hasScoreEstab && p.score_estab_0_10 != null)
+      ? Math.round(Number(p.score_estab_0_10) * 10)
+      : Math.round((1 - (cveToRank.get(p.CVEGEO) ?? 0.5)) * 100);
+    let oportunidad_tipo = "Baja";
+    if (opportunity_score >= 60) oportunidad_tipo = "Alta";
+    else if (opportunity_score >= 40) oportunidad_tipo = "Media";
+    const n_establecimientos = p.n_establecimientos ?? 0;
+    return {
+      ...f,
+      properties: {
+        ...p,
+        CVEGEO: p.CVEGEO,
+        pob_total: p.pob_total ?? sumPob(f),
+        opportunity_score,
+        oportunidad_tipo,
+        n_competitors: n_establecimientos,
+        n_establecimientos,
+        zona_tipo: oportunidad_tipo
+      }
+    };
+  })
+};
 ```
 
 ## Zonas de Oportunidad
@@ -32,7 +82,7 @@ const zonasBaja = zonasOportunidad.features.filter(f => f.properties.oportunidad
 
 // Estadísticas adicionales
 const avgScore = zonasOportunidad.features.reduce((sum, f) => sum + (f.properties.opportunity_score || 0), 0) / totalZonas;
-const totalCompetidores = zonasOportunidad.features.reduce((sum, f) => sum + (f.properties.n_competitors || 0), 0);
+const totalCompetidores = zonasOportunidad.features.reduce((sum, f) => sum + (f.properties.n_establecimientos || 0), 0);
 
 // Crear card con DOM manipulation
 const statsCard = document.createElement("div");
@@ -75,7 +125,7 @@ metricsDiv.innerHTML = `
   </div>
   <div style="text-align: center;">
     <div style="font-size: 1.5em; font-weight: 600; color: #c62828;">${totalCompetidores}</div>
-    <div style="font-size: 0.85em; color: #666;">Total Competidores</div>
+    <div style="font-size: 0.85em; color: #666;">Establecimientos (suma AGEBs)</div>
   </div>
 `;
 statsCard.appendChild(metricsDiv);
@@ -139,9 +189,8 @@ addGeoJsonLayer(map1, zonasOportunidad, {
         <b>Zona:</b> ${props.zona_tipo || 'N/A'}<br>
         <hr style="margin: 8px 0;">
         <div style="background: #f5f5f5; padding: 8px; border-radius: 4px;">
-          <b>Score Oportunidad:</b> <span style="color: ${tipoColor}; font-weight: 600;">${props.opportunity_score?.toFixed(1) || 'N/A'}</span><br>
-          <b>Competidores:</b> ${props.n_competitors || 0}<br>
-          <b>Establecimientos:</b> ${props.n_establecimientos || 0}<br>
+          <b>Score Oportunidad:</b> <span style="color: ${tipoColor}; font-weight: 600;">${props.opportunity_score ?? 'N/A'}</span><br>
+          <b>Establecimientos:</b> ${props.n_establecimientos ?? 0}<br>
           <b>Población:</b> ${props.pob_total?.toLocaleString() || 'N/A'}
         </div>
       </div>
@@ -214,15 +263,14 @@ addGeoJsonLayer(map2, zonasOportunidad, {
         <hr style="margin: 8px 0;">
         <div style="text-align: center; padding: 10px; background: ${compColor}20; border-radius: 8px; margin-bottom: 8px;">
           <div style="font-size: 2em; font-weight: bold; color: ${compColor};">${competitors}</div>
-          <div style="font-size: 0.85em; color: #666;">Competidores</div>
+          <div style="font-size: 0.85em; color: #666;">Establecimientos en AGEB</div>
           <div style="font-size: 0.8em; color: ${compColor}; font-weight: 600;">${compLabel}</div>
         </div>
-        <b>Establecimientos:</b> ${props.n_establecimientos || 0}<br>
-        <b>Densidad Comercial:</b> ${props.densidad_comercial?.toFixed(1) || 'N/A'}
+        <b>Población:</b> ${props.pob_total?.toLocaleString() ?? 'N/A'}
       </div>
     `;
     layer.bindPopup(popupContent, {maxWidth: 260});
-    layer.bindTooltip(`${competitors} competidores - ${compLabel}`, {sticky: true});
+    layer.bindTooltip(`${competitors} establecimientos - ${compLabel}`, {sticky: true});
   }
 });
 
@@ -248,7 +296,7 @@ zonasOportunidad.features.forEach(f => {
   }
   zonaStats[zona].count++;
   zonaStats[zona].avgScore += f.properties.opportunity_score || 0;
-  zonaStats[zona].totalCompetidores += f.properties.n_competitors || 0;
+  zonaStats[zona].totalCompetidores += f.properties.n_establecimientos || 0;
   zonaStats[zona].totalEstab += f.properties.n_establecimientos || 0;
 });
 
@@ -273,7 +321,6 @@ zonaThead.innerHTML = `
     <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Tipo de Zona</th>
     <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">AGEBs</th>
     <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">Score Prom.</th>
-    <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">Competidores</th>
     <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">Establecimientos</th>
   </tr>
 `;
@@ -290,7 +337,6 @@ sortedZonas.forEach(([zona, stats], idx) => {
     <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${stats.count}</td>
     <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #7b1fa2; font-weight: 600;">${stats.avgScore.toFixed(1)}</td>
     <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #c62828;">${stats.totalCompetidores}</td>
-    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #1565c0;">${stats.totalEstab}</td>
   `;
   zonaTbody.appendChild(row);
 });
@@ -313,18 +359,17 @@ const card1 = document.createElement("div");
 card1.className = "card";
 card1.style.borderLeft = "4px solid #2e7d32";
 card1.innerHTML = `
-  <h3 style="margin-top: 0; color: #2e7d32;">📊 Score de Oportunidad</h3>
+  <h3 style="margin-top: 0; color: #2e7d32;">Score de Oportunidad</h3>
   <p><strong>Factores considerados:</strong></p>
   <ul style="margin-bottom: 1rem;">
-    <li>Densidad comercial del área</li>
-    <li>Número de competidores directos</li>
-    <li>Score promedio de establecimientos</li>
-    <li>Población del AGEB</li>
+    <li>Conteo de establecimientos en el AGEB (score_estab_0_10 del proyecto)</li>
+    <li>Población del AGEB (SCINCE, suma POB*)</li>
+    <li>Percentil de población cuando no hay score por establecimientos</li>
   </ul>
-  <p><strong>Clasificación:</strong></p>
+  <p><strong>Clasificación (score 0-100):</strong></p>
   <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.5rem;">
     <div style="background: #2e7d32; color: white; padding: 8px; border-radius: 4px; text-align: center; font-size: 0.85em;">
-      <strong>Alta</strong><br>Score > 60
+      <strong>Alta</strong><br>Score >= 60
     </div>
     <div style="background: #f57c00; color: white; padding: 8px; border-radius: 4px; text-align: center; font-size: 0.85em;">
       <strong>Media</strong><br>Score 40-60
@@ -341,16 +386,16 @@ const card2 = document.createElement("div");
 card2.className = "card";
 card2.style.borderLeft = "4px solid #c62828";
 card2.innerHTML = `
-  <h3 style="margin-top: 0; color: #c62828;">🎯 Análisis de Competencia</h3>
-  <p><strong>Niveles de saturación:</strong></p>
+  <h3 style="margin-top: 0; color: #c62828;">Análisis de Competencia</h3>
+  <p><strong>Niveles de saturación (establecimientos por AGEB):</strong></p>
   <ul style="margin-bottom: 1rem;">
-    <li><strong style="color: #2e7d32;">Sin competencia:</strong> Mercado virgen, máxima oportunidad</li>
+    <li><strong style="color: #2e7d32;">Sin competencia (0):</strong> Zona con muy pocos establecimientos, máxima oportunidad</li>
     <li><strong style="color: #8bc34a;">Baja (1-3):</strong> Espacio para crecimiento</li>
     <li><strong style="color: #ffc107;">Moderada (4-10):</strong> Mercado establecido</li>
-    <li><strong style="color: #f44336;">Alta (>10):</strong> Mercado saturado</li>
+    <li><strong style="color: #f44336;">Alta (>10):</strong> Zona saturada de establecimientos</li>
   </ul>
   <p style="font-size: 0.9em; color: #666; background: #f5f5f5; padding: 10px; border-radius: 4px;">
-    <strong>💡 Recomendación:</strong> Priorizar zonas con oportunidad Alta/Media y competencia Baja/Sin competencia.
+    <strong>Recomendación:</strong> Priorizar zonas con oportunidad Alta/Media y competencia Baja/Sin competencia.
   </p>
 `;
 criteriosGrid.appendChild(card2);
@@ -386,7 +431,7 @@ top10Thead.innerHTML = `
     <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">Score</th>
     <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">Tipo</th>
     <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">Zona</th>
-    <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">Competidores</th>
+    <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">Establecimientos</th>
     <th style="padding: 10px; text-align: center; border: 1px solid #ddd;">Población</th>
   </tr>
 `;
@@ -403,15 +448,15 @@ top10Agebs.forEach((f, i) => {
   row.innerHTML = `
     <td style="padding: 8px; border: 1px solid #ddd;">
       <strong style="color: ${isTop3 ? '#2e7d32' : '#333'};">#${i + 1}</strong>
-      ${i === 0 ? ' 🥇' : i === 1 ? ' 🥈' : i === 2 ? ' 🥉' : ''}
+      ${i < 3 ? ` (#${i + 1})` : ''}
     </td>
     <td style="padding: 8px; border: 1px solid #ddd;"><code style="font-size: 0.85em;">${p.CVEGEO || 'N/A'}</code></td>
-    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: 700; color: #2e7d32; font-size: 1.1em;">${p.opportunity_score?.toFixed(1) || 'N/A'}</td>
+    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: 700; color: #2e7d32; font-size: 1.1em;">${p.opportunity_score ?? 'N/A'}</td>
     <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
       <span style="background: ${tipoColor}; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8em;">${p.oportunidad_tipo || 'N/A'}</span>
     </td>
     <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-size: 0.9em;">${p.zona_tipo || 'N/A'}</td>
-    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: ${p.n_competitors > 5 ? '#c62828' : '#2e7d32'};">${p.n_competitors || 0}</td>
+    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: ${(p.n_establecimientos || 0) > 5 ? '#c62828' : '#2e7d32'};">${p.n_establecimientos ?? 0}</td>
     <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${p.pob_total?.toLocaleString() || 'N/A'}</td>
   `;
   top10Tbody.appendChild(row);
@@ -430,7 +475,7 @@ const recomCard = document.createElement("div");
 recomCard.className = "note";
 recomCard.style.cssText = "background: linear-gradient(135deg, #e3f2fd 0%, white 100%); border-left: 4px solid #1565c0; padding: 1.5rem;";
 recomCard.innerHTML = `
-  <h3 style="margin-top: 0; color: #1565c0;">💡 Insights Clave</h3>
+  <h3 style="margin-top: 0; color: #1565c0;">Insights Clave</h3>
   <ul style="margin-bottom: 0;">
     <li><strong style="color: #2e7d32;">Zonas de Alta Oportunidad:</strong> Presentan el mejor balance entre demanda y baja competencia. Enfocar esfuerzos comerciales aquí.</li>
     <li><strong style="color: #7b1fa2;">Top 10 AGEBs:</strong> Máximo potencial identificado. Considerar para primeras acciones comerciales.</li>
@@ -449,7 +494,7 @@ const nextStepsCard = document.createElement("div");
 nextStepsCard.className = "card";
 nextStepsCard.style.cssText = "background: #f5f5f5; border: 1px solid #e0e0e0;";
 nextStepsCard.innerHTML = `
-  <h3 style="margin-top: 0;">📋 Siguientes Pasos</h3>
+  <h3 style="margin-top: 0;">Siguientes Pasos</h3>
   <ol style="margin-bottom: 0;">
     <li>Revisar <a href="/mapas/sweet-spots" style="color: #d32f2f; font-weight: 600;">Sweet Spots</a> para identificar ubicaciones que coincidan con zonas de alta oportunidad</li>
     <li>Analizar <a href="/mapas/hubs" style="color: #f44336; font-weight: 600;">Hubs Logísticos</a> para cobertura óptima de zonas prioritarias</li>

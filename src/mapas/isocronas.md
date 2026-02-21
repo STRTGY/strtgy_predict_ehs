@@ -77,8 +77,7 @@ const top10hubsSorted = [...top10hubs].sort((a, b) => b.score_adjusted - a.score
 ```js
 display(sectionHeader({
   title: "Análisis de Isócronas con HERE API",
-  subtitle: "Cobertura real calculada con red vial y condiciones de tráfico de Hermosillo",
-  certainty: "high"
+  subtitle: "Cobertura real calculada con red vial y condiciones de tráfico de Hermosillo"
 }));
 ```
 
@@ -554,5 +553,5 @@ display(implicationsCallout({
 ---
 
 <small style="color: #999;">
-  **Ver también:** <a href="./hubs">🚚 Hubs Logísticos</a> | <a href="../logistica-sonora">6) Logística y Sonora</a> | <a href="../dashboard">7) Dashboard</a>
+  <strong>Ver también:</strong> <a href="./hubs">Hubs Logísticos</a> | <a href="../logistica-sonora">6) Logística y Sonora</a> | <a href="../dashboard">7) Dashboard</a>
 </small>
