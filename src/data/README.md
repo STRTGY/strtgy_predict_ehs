@@ -14,6 +14,10 @@ npm run sync:data
 python scripts/sync_data_to_observable.py
 ```
 
+## Large assets not in Git
+
+The following files exceed GitHub's file size limits and are listed in `.gitignore`. They are not in the repository. For local development, obtain them from your pipeline output (Step 05 / 05b) or from internal storage: `agebs_base.web.geojson`, `src/data/layers/h3/h3_res9.geojson`, `src/data/layers/h3/h3_res10.geojson`.
+
 ## Pipeline data incorporation
 
 El directorio `src/data/` es alimentado por el **pipeline Midmen** (Step 05 y, si está habilitado, Step 05b). Step 05 es la **única fuente de verdad** para los archivos de este directorio: lee únicamente desde `data/processed/midmen/` y escribe los artefactos optimizados para web (`.web.geojson`, `.web.csv`) más `catalog.json`, `metrics.json` y `denue_hermosillo_metadata.json`.
